@@ -29,7 +29,7 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
         if (match != null) {
-            Kit kit = plugin.getKitManager().getKit(match.getKitName());
+            Kit kit = plugin.getKitManager().getKit(match.getKit().getName());
             if (kit != null && kit.getRules() != null) {
                 if (!kit.getRules().isNaturalHealthRegen() && 
                     event.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED) {
@@ -45,7 +45,7 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
         if (match != null) {
-            Kit kit = plugin.getKitManager().getKit(match.getKitName());
+            Kit kit = plugin.getKitManager().getKit(match.getKit().getName());
             if (kit != null && kit.getRules() != null) {
                 if (!kit.getRules().isBlockBreak()) {
                     event.setCancelled(true);
@@ -60,7 +60,7 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
         if (match != null) {
-            Kit kit = plugin.getKitManager().getKit(match.getKitName());
+            Kit kit = plugin.getKitManager().getKit(match.getKit().getName());
             if (kit != null && kit.getRules() != null) {
                 if (!kit.getRules().isBlockPlace()) {
                     event.setCancelled(true);
@@ -75,9 +75,9 @@ public class KitRulesListener implements Listener {
             TNTPrimed tnt = (TNTPrimed) event.getEntity();
             
             // Check if TNT is in a match area
-            Match match = plugin.getMatchManager().getMatchAtLocation(event.getLocation());
+            Match match = plugin.getMatchManager().getMatchInArena(event.getLocation());
             if (match != null) {
-                Kit kit = plugin.getKitManager().getKit(match.getKitName());
+                Kit kit = plugin.getKitManager().getKit(match.getKit().getName());
                 if (kit != null && kit.getRules() != null && kit.getRules().isInstantTnt()) {
                     tnt.setFuseTicks(1); // Instant explosion
                 }
@@ -94,7 +94,7 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(damaged);
         
         if (match != null) {
-            Kit kit = plugin.getKitManager().getKit(match.getKitName());
+            Kit kit = plugin.getKitManager().getKit(match.getKit().getName());
             if (kit != null && kit.getRules() != null) {
                 double multiplier = kit.getRules().getDamageMultiplier();
                 if (multiplier != 1.0) {

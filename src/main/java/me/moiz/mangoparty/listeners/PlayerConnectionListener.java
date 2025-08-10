@@ -17,13 +17,40 @@ public class PlayerConnectionListener implements Listener {
     
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        // Remove player from queues
-        plugin.getQueueManager().removePlayer(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        
+        // Remove from queues
+        plugin.getQueueManager().removePlayer(player.getUniqueId());
         
         // Handle party leaving
-        plugin.getPartyManager().handlePlayerDisconnect(event.getPlayer());
+        Party party = plugin.getPartyManager().getParty(player);
+        if (party != null) {
+            plugin.getPartyManager().leaveParty(player);
+            
+            // Notify remaining party members
+            for (Player member : party.getOnlineMembers()) {
+                if (!member.equals(player)) {
+                    member.sendMessage("§c" + player.getName() + " §7left the server and was removed from the party!");
+                }
+            }
+            
+            // Disband party if empty
+            if (party.getSize() == 0) {
+                plugin.getPartyManager().disbandParty(party);
+            }
+        }
         
         // Handle match leaving
-        plugin.getMatchManager().handlePlayerDisconnect(event.getPlayer());
+        Match match = plugin.getMatchManager().getPlayerMatch(player);
+        if (match != null) {
+            plugin.getMatchManager().eliminatePlayer(player, match);
+            
+            // Notify other players in match
+            for (Player matchPlayer : match.getAllPlayers()) {
+                if (!matchPlayer.equals(player) && matchPlayer.isOnline()) {
+                    matchPlayer.sendMessage("§c" + player.getName() + " §7left the server and was eliminated!");
+                }
+            }
+        }
     }
 }

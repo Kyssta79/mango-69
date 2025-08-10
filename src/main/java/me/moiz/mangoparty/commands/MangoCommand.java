@@ -51,8 +51,7 @@ public class MangoCommand implements CommandExecutor {
                 break;
             case "reload":
                 if (player.hasPermission("mangoparty.admin")) {
-                    plugin.getConfigManager().reloadConfigs();
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aConfigs reloaded!"));
+                    reloadPlugin(player);
                 } else {
                     player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cYou don't have permission to use this command!"));
                 }
@@ -63,6 +62,17 @@ public class MangoCommand implements CommandExecutor {
         }
         
         return true;
+    }
+    
+    private void reloadPlugin(Player player) {
+        try {
+            plugin.reloadConfig();
+            plugin.getKitEditorGui().reloadConfigs();
+            plugin.getGuiManager().reloadGuiConfigs();
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aConfigs reloaded!"));
+        } catch (Exception e) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cFailed to reload configs: " + e.getMessage()));
+        }
     }
     
     private void sendHelpMessage(Player player) {

@@ -19,12 +19,12 @@ import org.bukkit.inventory.meta.SkullMeta;
 import me.moiz.mangoparty.models.Arena;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.io.IOException;
 
 public class GuiManager implements Listener {
     private MangoParty plugin;

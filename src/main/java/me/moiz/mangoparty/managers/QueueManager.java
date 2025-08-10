@@ -2,6 +2,7 @@ package me.moiz.mangoparty.managers;
 
 import me.moiz.mangoparty.MangoParty;
 import me.moiz.mangoparty.models.QueueEntry;
+import me.moiz.mangoparty.models.Party;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -106,6 +107,10 @@ public class QueueManager {
         }
     }
     
+    public void cleanup() {
+        queues.clear();
+    }
+    
     private void startQueueProcessor() {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (String queueType : queues.keySet()) {
@@ -195,12 +200,18 @@ public class QueueManager {
             return;
         }
         
+        // Create a temporary party for the match
+        Party tempParty = new Party(players.get(0).getUniqueId());
+        for (Player player : players) {
+            tempParty.addMember(player.getUniqueId());
+        }
+        
         // Notify players
         for (Player player : players) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aMatch found! Starting " + queueType + " match..."));
         }
         
         // Start the match
-        plugin.getMatchManager().startQueueMatch(players, arena, kit, queueType);
+        plugin.getMatchManager().startQueueMatch(tempParty, arena, kit, queueType, players);
     }
 }

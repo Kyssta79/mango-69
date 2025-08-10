@@ -9,88 +9,73 @@ import java.util.List;
 public class Kit {
     private String name;
     private String displayName;
-    private ItemStack[] items;
-    private ItemStack[] armor;
     private ItemStack icon;
-    private List<PotionEffect> effects;
+    private List<ItemStack> items;
+    private List<ItemStack> armor;
     private KitRules rules;
 
     public Kit(String name) {
         this.name = name;
         this.displayName = name;
-        this.items = new ItemStack[36];
-        this.armor = new ItemStack[4];
-        this.effects = new ArrayList<>();
+        this.icon = null;
+        this.items = new ArrayList<>(36);
+        this.armor = new ArrayList<>(4);
         this.rules = new KitRules();
     }
 
-    public Kit(String name, String displayName, ItemStack[] items, ItemStack[] armor) {
+    public Kit(String name, String displayName, ItemStack icon, List<ItemStack> items, List<ItemStack> armor) {
         this.name = name;
         this.displayName = displayName;
-        this.items = items != null ? items : new ItemStack[36];
-        this.armor = armor != null ? armor : new ItemStack[4];
-        this.effects = new ArrayList<>();
+        this.icon = icon;
+        this.items = items;
+        this.armor = armor;
         this.rules = new KitRules();
     }
 
-    // Getters and setters
+    // Getters
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDisplayName() {
-        return displayName != null ? displayName : name;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public ItemStack[] getItems() {
-        return items;
-    }
-
-    public void setItems(ItemStack[] items) {
-        this.items = items;
-    }
-
-    public ItemStack[] getArmor() {
-        return armor;
-    }
-
-    public void setArmor(ItemStack[] armor) {
-        this.armor = armor;
+        return displayName;
     }
 
     public ItemStack getIcon() {
         return icon;
     }
 
-    public void setIcon(ItemStack icon) {
-        this.icon = icon;
+    public List<ItemStack> getItems() {
+        return items;
     }
 
-    public List<PotionEffect> getEffects() {
-        return effects;
-    }
-
-    public void setEffects(List<PotionEffect> effects) {
-        this.effects = effects != null ? effects : new ArrayList<>();
-    }
-
-    public void addEffect(PotionEffect effect) {
-        if (effects == null) {
-            effects = new ArrayList<>();
-        }
-        effects.add(effect);
+    public List<ItemStack> getArmor() {
+        return armor;
     }
 
     public KitRules getRules() {
         return rules;
+    }
+
+    // Setters
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setIcon(ItemStack icon) {
+        this.icon = icon;
+    }
+
+    public void setItems(List<ItemStack> items) {
+        this.items = items;
+    }
+
+    public void setArmor(List<ItemStack> armor) {
+        this.armor = armor;
     }
 
     public void setRules(KitRules rules) {
@@ -99,48 +84,66 @@ public class Kit {
 
     // Individual item methods
     public ItemStack getItem(int slot) {
-        if (slot >= 0 && slot < items.length) {
-            return items[slot];
+        if (slot >= 0 && slot < items.size()) {
+            return items.get(slot);
         }
         return null;
     }
 
     public void setItem(int slot, ItemStack item) {
-        if (slot >= 0 && slot < items.length) {
-            items[slot] = item;
+        if (slot >= 0 && slot < items.size()) {
+            items.set(slot, item);
+        } else if (slot >= 0 && slot < 36) {
+            items.add(slot, item);
         }
     }
 
     // Armor methods
     public ItemStack getHelmet() {
-        return armor[3];
+        return armor.size() > 3 ? armor.get(3) : null;
     }
 
     public void setHelmet(ItemStack helmet) {
-        armor[3] = helmet;
+        if (armor.size() > 3) {
+            armor.set(3, helmet);
+        } else {
+            armor.add(3, helmet);
+        }
     }
 
     public ItemStack getChestplate() {
-        return armor[2];
+        return armor.size() > 2 ? armor.get(2) : null;
     }
 
     public void setChestplate(ItemStack chestplate) {
-        armor[2] = chestplate;
+        if (armor.size() > 2) {
+            armor.set(2, chestplate);
+        } else {
+            armor.add(2, chestplate);
+        }
     }
 
     public ItemStack getLeggings() {
-        return armor[1];
+        return armor.size() > 1 ? armor.get(1) : null;
     }
 
     public void setLeggings(ItemStack leggings) {
-        armor[1] = leggings;
+        if (armor.size() > 1) {
+            armor.set(1, leggings);
+        } else {
+            armor.add(1, leggings);
+        }
     }
 
     public ItemStack getBoots() {
-        return armor[0];
+        return armor.size() > 0 ? armor.get(0) : null;
     }
 
     public void setBoots(ItemStack boots) {
-        armor[0] = boots;
+        if (armor.size() > 0) {
+            armor.set(0, boots);
+        } else {
+            armor.add(0, boots);
+        }
     }
 }
