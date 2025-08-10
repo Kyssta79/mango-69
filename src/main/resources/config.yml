@@ -1,0 +1,44 @@
+# MangoParty Configuration
+
+# Debug mode - enables detailed logging
+debug: false
+
+# Database settings
+database:
+  type: "sqlite" # sqlite, mysql
+  host: "localhost"
+  port: 3306
+  database: "mangoparty"
+  username: "root"
+  password: ""
+
+# Match settings
+match:
+  countdown_time: 5
+  max_duration: 300 # 5 minutes in seconds
+  
+# Queue settings
+queue:
+  max_wait_time: 120 # 2 minutes in seconds
+  
+# Party settings
+party:
+  max_size: 8
+  
+# Scoreboard settings
+scoreboard:
+  enabled: true
+  update_interval: 20 # ticks
+  
+# Messages
+messages:
+  prefix: "&8[&6MangoParty&8] "
+  no_permission: "&cYou don't have permission to use this command!"
+  player_only: "&cThis command can only be used by players!"
+  
+# Arena regeneration settings
+arena:
+  regeneration:
+    enabled: true
+    delay: 5 # seconds after match ends
+    async: true # perform regeneration asynchronously

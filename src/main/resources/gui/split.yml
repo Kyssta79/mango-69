@@ -1,0 +1,11 @@
+title: "&6Split Duels"
+size: 54
+
+items:
+  back:
+    material: "ARROW"
+    name: "&cBack"
+    slot: 49
+    lore: []
+
+kits: {}

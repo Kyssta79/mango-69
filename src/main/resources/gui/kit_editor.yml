@@ -1,0 +1,25 @@
+kit_list:
+  title: "&6Kit Manager"
+  size: 54
+  items:
+    create:
+      material: "EMERALD"
+      name: "&a&lCreate New Kit"
+      slot: 0
+    start_slot: 9
+
+title: "&6Kit Editor: {kit}"
+size: 54
+items:
+  icon:
+    slot: 4
+  items:
+    slot: 20
+  armor:
+    slot: 22
+  rules:
+    slot: 24
+  save:
+    slot: 40
+  back:
+    slot: 49
