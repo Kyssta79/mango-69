@@ -1,161 +1,137 @@
 package me.moiz.mangoparty.models;
 
 import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.bukkit.World;
 
 public class Arena {
     private String name;
-    private String worldName;
-    private Location center;
     private Location spawn1;
     private Location spawn2;
+    private Location center;
     private Location corner1;
     private Location corner2;
-    private boolean regenerateBlocks;
-    private List<String> allowedKits;
+    private String schematicName;
+    private boolean inUse;
 
     public Arena(String name) {
         this.name = name;
-        this.worldName = "world"; // Default world
-        this.regenerateBlocks = true;
-        this.allowedKits = new ArrayList<>(); // Empty list = all kits disabled by default
+        this.inUse = false;
     }
 
-    public Arena(String name, String worldName) {
+    public Arena(String name, Location spawn1, Location spawn2, Location center, Location corner1, Location corner2, String schematicName) {
         this.name = name;
-        this.worldName = worldName;
-        this.regenerateBlocks = true;
-        this.allowedKits = new ArrayList<>(); // Empty list = all kits disabled by default
+        this.spawn1 = spawn1;
+        this.spawn2 = spawn2;
+        this.center = center;
+        this.corner1 = corner1;
+        this.corner2 = corner2;
+        this.schematicName = schematicName;
+        this.inUse = false;
     }
 
-    // Getters and setters
+    public boolean isInBounds(Location location) {
+        if (corner1 == null || corner2 == null || location == null) {
+            return false;
+        }
+
+        if (!location.getWorld().equals(corner1.getWorld())) {
+            return false;
+        }
+
+        double minX = Math.min(corner1.getX(), corner2.getX());
+        double maxX = Math.max(corner1.getX(), corner2.getX());
+        double minY = Math.min(corner1.getY(), corner2.getY());
+        double maxY = Math.max(corner1.getY(), corner2.getY());
+        double minZ = Math.min(corner1.getZ(), corner2.getZ());
+        double maxZ = Math.max(corner1.getZ(), corner2.getZ());
+
+        return location.getX() >= minX && location.getX() <= maxX &&
+               location.getY() >= minY && location.getY() <= maxY &&
+               location.getZ() >= minZ && location.getZ() <= maxZ;
+    }
+
+    // Getters
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getWorldName() {
-        return worldName;
-    }
-
-    public void setWorldName(String worldName) {
-        this.worldName = worldName;
-    }
-
-    public Location getCenter() {
-        return center;
-    }
-
-    public void setCenter(Location center) {
-        this.center = center;
     }
 
     public Location getSpawn1() {
         return spawn1;
     }
 
-    public void setSpawn1(Location spawn1) {
-        this.spawn1 = spawn1;
-    }
-
     public Location getSpawn2() {
         return spawn2;
     }
 
-    public void setSpawn2(Location spawn2) {
-        this.spawn2 = spawn2;
+    public Location getCenter() {
+        return center;
     }
 
     public Location getCorner1() {
         return corner1;
     }
 
-    public void setCorner1(Location corner1) {
-        this.corner1 = corner1;
-    }
-
     public Location getCorner2() {
         return corner2;
+    }
+
+    public String getSchematicName() {
+        return schematicName;
+    }
+
+    public boolean isInUse() {
+        return inUse;
+    }
+
+    // Setters
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSpawn1(Location spawn1) {
+        this.spawn1 = spawn1;
+    }
+
+    public void setSpawn2(Location spawn2) {
+        this.spawn2 = spawn2;
+    }
+
+    public void setCenter(Location center) {
+        this.center = center;
+    }
+
+    public void setCorner1(Location corner1) {
+        this.corner1 = corner1;
     }
 
     public void setCorner2(Location corner2) {
         this.corner2 = corner2;
     }
 
-    public boolean isRegenerateBlocks() {
-        return regenerateBlocks;
+    public void setSchematicName(String schematicName) {
+        this.schematicName = schematicName;
     }
 
-    public void setRegenerateBlocks(boolean regenerateBlocks) {
-        this.regenerateBlocks = regenerateBlocks;
-    }
-
-    public List<String> getAllowedKits() {
-        return allowedKits;
-    }
-
-    public void setAllowedKits(List<String> allowedKits) {
-        this.allowedKits = allowedKits != null ? allowedKits : new ArrayList<>();
-    }
-
-    public void addAllowedKit(String kitName) {
-        if (!allowedKits.contains(kitName)) {
-            allowedKits.add(kitName);
-        }
-    }
-
-    public void removeAllowedKit(String kitName) {
-        allowedKits.remove(kitName);
-    }
-
-    public boolean isKitAllowed(String kitName) {
-        // If allowedKits is empty, no kits are allowed (all disabled by default)
-        // If allowedKits has items, only those kits are allowed
-        return !allowedKits.isEmpty() && allowedKits.contains(kitName);
+    public void setInUse(boolean inUse) {
+        this.inUse = inUse;
     }
 
     public boolean isComplete() {
-        return center != null && spawn1 != null && spawn2 != null && corner1 != null && corner2 != null;
+        return spawn1 != null && spawn2 != null && center != null && 
+               corner1 != null && corner2 != null && schematicName != null;
     }
 
-    public void saveToConfig(ConfigurationSection section) {
-        section.set("world", worldName);
-        
-        if (center != null) {
-            ConfigurationSection centerSection = section.createSection("center");
-            saveLocationToConfig(centerSection, center);
-        }
-        if (spawn1 != null) {
-            ConfigurationSection spawn1Section = section.createSection("spawn1");
-            saveLocationToConfig(spawn1Section, spawn1);
-        }
-        if (spawn2 != null) {
-            ConfigurationSection spawn2Section = section.createSection("spawn2");
-            saveLocationToConfig(spawn2Section, spawn2);
-        }
-        if (corner1 != null) {
-            ConfigurationSection corner1Section = section.createSection("corner1");
-            saveLocationToConfig(corner1Section, corner1);
-        }
-        if (corner2 != null) {
-            ConfigurationSection corner2Section = section.createSection("corner2");
-            saveLocationToConfig(corner2Section, corner2);
-        }
-        section.set("regenerateBlocks", regenerateBlocks);
-        section.set("allowedKits", allowedKits);
-    }
-
-    private void saveLocationToConfig(ConfigurationSection section, Location location) {
-        section.set("x", location.getX());
-        section.set("y", location.getY());
-        section.set("z", location.getZ());
-        section.set("yaw", location.getYaw());
-        section.set("pitch", location.getPitch());
+    @Override
+    public String toString() {
+        return "Arena{" +
+                "name='" + name + '\'' +
+                ", spawn1=" + spawn1 +
+                ", spawn2=" + spawn2 +
+                ", center=" + center +
+                ", corner1=" + corner1 +
+                ", corner2=" + corner2 +
+                ", schematicName='" + schematicName + '\'' +
+                ", inUse=" + inUse +
+                '}';
     }
 }

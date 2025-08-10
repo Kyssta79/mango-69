@@ -6,6 +6,7 @@ import me.moiz.mangoparty.models.Kit;
 import me.moiz.mangoparty.models.Party;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -33,12 +34,36 @@ public class MatchManager {
         return matchId != null ? activeMatches.get(matchId) : null;
     }
 
+    public Match getMatchInArena(Location location) {
+        for (Match match : activeMatches.values()) {
+            Arena arena = match.getArena();
+            if (arena != null && arena.isInBounds(location)) {
+                return match;
+            }
+        }
+        return null;
+    }
+
     public void eliminatePlayer(Player player, Match match) {
         match.eliminatePlayer(player.getUniqueId());
         
         // Check if match is finished
         if (match.isFinished()) {
             endMatch(match);
+        }
+    }
+
+    public void handlePlayerDisconnect(Player player) {
+        Match match = getPlayerMatch(player);
+        if (match != null) {
+            eliminatePlayer(player, match);
+            
+            // Notify other players in match
+            for (Player matchPlayer : match.getAllPlayers()) {
+                if (!matchPlayer.equals(player) && matchPlayer.isOnline()) {
+                    matchPlayer.sendMessage("§c" + player.getName() + " §7left the server and was eliminated!");
+                }
+            }
         }
     }
 
@@ -352,7 +377,9 @@ public class MatchManager {
         }, 60L); // 3 seconds delay
         
         // Set party as not in match
-        match.getParty().setInMatch(false);
+        if (match.getParty() != null) {
+            match.getParty().setInMatch(false);
+        }
         match.setState(Match.MatchState.FINISHED);
         
         // Regenerate arena

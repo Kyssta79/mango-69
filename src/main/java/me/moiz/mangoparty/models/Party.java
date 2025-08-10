@@ -8,95 +8,137 @@ import java.util.*;
 public class Party {
     private UUID leader;
     private Set<UUID> members;
-    private Map<UUID, Long> invites; // UUID -> expiration time
+    private Set<UUID> invites;
     private boolean inMatch;
-    
+    private boolean open;
+
     public Party(UUID leader) {
         this.leader = leader;
         this.members = new HashSet<>();
-        this.invites = new HashMap<>();
-        this.members.add(leader);
+        this.invites = new HashSet<>();
+        this.members.add(leader); // Leader is also a member
         this.inMatch = false;
+        this.open = false;
     }
-    
-    public UUID getLeader() {
-        return leader;
+
+    // Member management
+    public void addMember(UUID playerId) {
+        members.add(playerId);
     }
-    
-    public void setLeader(UUID leader) {
-        this.leader = leader;
+
+    public void removeMember(UUID playerId) {
+        members.remove(playerId);
+        invites.remove(playerId); // Remove any pending invites
     }
-    
-    public Set<UUID> getMembers() {
-        return new HashSet<>(members);
+
+    public boolean isMember(UUID playerId) {
+        return members.contains(playerId);
     }
-    
-    public void addMember(UUID member) {
-        members.add(member);
-        invites.remove(member);
+
+    public boolean isLeader(UUID playerId) {
+        return leader.equals(playerId);
     }
-    
-    public void removeMember(UUID member) {
-        members.remove(member);
+
+    // Invite management
+    public void addInvite(UUID playerId) {
+        invites.add(playerId);
     }
-    
-    public boolean isMember(UUID player) {
-        return members.contains(player);
+
+    public void removeInvite(UUID playerId) {
+        invites.remove(playerId);
     }
-    
-    public boolean isLeader(UUID player) {
-        return leader.equals(player);
+
+    public boolean hasInvite(UUID playerId) {
+        return invites.contains(playerId);
     }
-    
-    public void addInvite(UUID player, long expirationTime) {
-        invites.put(player, expirationTime);
-    }
-    
-    public void removeInvite(UUID player) {
-        invites.remove(player);
-    }
-    
-    public boolean hasInvite(UUID player) {
-        Long expiration = invites.get(player);
-        if (expiration == null) return false;
-        
-        if (System.currentTimeMillis() > expiration) {
-            invites.remove(player);
-            return false;
-        }
-        return true;
-    }
-    
-    public void cleanExpiredInvites() {
-        long currentTime = System.currentTimeMillis();
-        invites.entrySet().removeIf(entry -> entry.getValue() < currentTime);
-    }
-    
+
+    // Utility methods
     public int getSize() {
         return members.size();
     }
-    
+
     public List<Player> getOnlineMembers() {
-        List<Player> online = new ArrayList<>();
-        for (UUID uuid : members) {
-            Player player = Bukkit.getPlayer(uuid);
+        List<Player> onlineMembers = new ArrayList<>();
+        for (UUID memberId : members) {
+            Player player = Bukkit.getPlayer(memberId);
             if (player != null && player.isOnline()) {
-                online.add(player);
+                onlineMembers.add(player);
             }
         }
-        return online;
+        return onlineMembers;
     }
-    
+
+    public List<Player> getOnlineMembersExcept(UUID excludeId) {
+        List<Player> onlineMembers = new ArrayList<>();
+        for (UUID memberId : members) {
+            if (!memberId.equals(excludeId)) {
+                Player player = Bukkit.getPlayer(memberId);
+                if (player != null && player.isOnline()) {
+                    onlineMembers.add(player);
+                }
+            }
+        }
+        return onlineMembers;
+    }
+
+    public Player getLeaderPlayer() {
+        return Bukkit.getPlayer(leader);
+    }
+
+    // Getters and setters
+    public UUID getLeader() {
+        return leader;
+    }
+
+    public void setLeader(UUID leader) {
+        this.leader = leader;
+    }
+
+    public Set<UUID> getMembers() {
+        return new HashSet<>(members);
+    }
+
+    public Set<UUID> getInvites() {
+        return new HashSet<>(invites);
+    }
+
     public boolean isInMatch() {
         return inMatch;
     }
-    
+
     public void setInMatch(boolean inMatch) {
         this.inMatch = inMatch;
     }
-    
-    public void disbandParty() {
-        members.clear();
-        invites.clear();
+
+    public boolean isOpen() {
+        return open;
+    }
+
+    public void setOpen(boolean open) {
+        this.open = open;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Party party = (Party) obj;
+        return Objects.equals(leader, party.leader);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(leader);
+    }
+
+    @Override
+    public String toString() {
+        return "Party{" +
+                "leader=" + leader +
+                ", members=" + members +
+                ", invites=" + invites +
+                ", inMatch=" + inMatch +
+                ", open=" + open +
+                '}';
     }
 }

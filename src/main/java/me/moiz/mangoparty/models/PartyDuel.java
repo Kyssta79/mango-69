@@ -1,31 +1,76 @@
 package me.moiz.mangoparty.models;
 
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
+import java.util.UUID;
 
 public class PartyDuel {
-    private Player challenger;
-    private Player challenged;
+    private UUID challengerId;
+    private UUID challengedId;
     private String kitName;
     private long challengeTime;
-    private BukkitTask expirationTask;
-    
-    public PartyDuel(Player challenger, Player challenged, String kitName) {
-        this.challenger = challenger;
-        this.challenged = challenged;
+    private boolean accepted;
+
+    public PartyDuel(UUID challengerId, UUID challengedId, String kitName) {
+        this.challengerId = challengerId;
+        this.challengedId = challengedId;
         this.kitName = kitName;
         this.challengeTime = System.currentTimeMillis();
+        this.accepted = false;
     }
-    
+
+    // Getters
+    public UUID getChallengerId() {
+        return challengerId;
+    }
+
+    public UUID getChallengedId() {
+        return challengedId;
+    }
+
+    public String getKitName() {
+        return kitName;
+    }
+
+    public long getChallengeTime() {
+        return challengeTime;
+    }
+
+    public boolean isAccepted() {
+        return accepted;
+    }
+
+    // Setters
+    public void setChallengerId(UUID challengerId) {
+        this.challengerId = challengerId;
+    }
+
+    public void setChallengedId(UUID challengedId) {
+        this.challengedId = challengedId;
+    }
+
+    public void setKitName(String kitName) {
+        this.kitName = kitName;
+    }
+
+    public void setChallengeTime(long challengeTime) {
+        this.challengeTime = challengeTime;
+    }
+
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
+    }
+
     public boolean isExpired() {
-        return System.currentTimeMillis() - challengeTime > 60000; // 60 seconds
+        return System.currentTimeMillis() - challengeTime > 60000; // 1 minute expiry
     }
-    
-    // Getters and setters
-    public Player getChallenger() { return challenger; }
-    public Player getChallenged() { return challenged; }
-    public String getKitName() { return kitName; }
-    public long getChallengeTime() { return challengeTime; }
-    public BukkitTask getExpirationTask() { return expirationTask; }
-    public void setExpirationTask(BukkitTask task) { this.expirationTask = task; }
+
+    @Override
+    public String toString() {
+        return "PartyDuel{" +
+                "challengerId=" + challengerId +
+                ", challengedId=" + challengedId +
+                ", kitName='" + kitName + '\'' +
+                ", challengeTime=" + challengeTime +
+                ", accepted=" + accepted +
+                '}';
+    }
 }

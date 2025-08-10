@@ -32,6 +32,12 @@ public class ConfigManager {
         createDefaultArenaConfig();
     }
     
+    public void reloadConfigs() {
+        plugin.reloadConfig();
+        loadConfigs();
+        plugin.getLogger().info("All configs have been reloaded!");
+    }
+    
     private void createDefaultConfig() {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         if (!configFile.exists()) {
