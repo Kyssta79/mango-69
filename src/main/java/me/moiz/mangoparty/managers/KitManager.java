@@ -53,23 +53,26 @@ public class KitManager {
         try {
             String displayName = section.getString("displayName", name);
             
+            // Create kit with basic constructor
+            Kit kit = new Kit(name);
+            kit.setDisplayName(displayName);
+            
             // Load icon
-            ItemStack icon = null;
             if (section.contains("icon")) {
                 ConfigurationSection iconSection = section.getConfigurationSection("icon");
                 if (iconSection != null) {
                     Material material = Material.valueOf(iconSection.getString("material", "IRON_SWORD"));
-                    icon = new ItemStack(material);
+                    ItemStack icon = new ItemStack(material);
                     
                     if (iconSection.contains("name")) {
                         ItemMeta meta = icon.getItemMeta();
                         meta.setDisplayName(iconSection.getString("name"));
                         icon.setItemMeta(meta);
                     }
+                    
+                    kit.setIcon(icon);
                 }
             }
-            
-            Kit kit = new Kit(name, displayName, icon);
             
             // Load items
             if (section.contains("items")) {
@@ -244,7 +247,9 @@ public class KitManager {
             return null;
         }
         
-        Kit kit = new Kit(name, displayName, new ItemStack(Material.IRON_SWORD));
+        Kit kit = new Kit(name);
+        kit.setDisplayName(displayName);
+        kit.setIcon(new ItemStack(Material.IRON_SWORD));
         kits.put(name, kit);
         saveKit(kit);
         
