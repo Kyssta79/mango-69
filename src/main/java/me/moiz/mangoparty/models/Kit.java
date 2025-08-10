@@ -20,6 +20,32 @@ public class Kit {
         this.rules = new KitRules();
     }
     
+    // Constructor for creating kit with items and armor
+    public Kit(String name, String displayName, ItemStack[] items, ItemStack[] armor) {
+        this.name = name;
+        this.displayName = displayName;
+        this.items = new ArrayList<>();
+        this.armor = new ArrayList<>();
+        this.rules = new KitRules();
+        
+        // Convert arrays to lists
+        if (items != null) {
+            for (ItemStack item : items) {
+                if (item != null) {
+                    this.items.add(item.clone());
+                }
+            }
+        }
+        
+        if (armor != null) {
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null) {
+                    this.armor.add(armorPiece.clone());
+                }
+            }
+        }
+    }
+    
     public String getName() {
         return name;
     }

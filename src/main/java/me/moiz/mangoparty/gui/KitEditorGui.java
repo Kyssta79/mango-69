@@ -361,7 +361,20 @@ public class KitEditorGui implements Listener {
                     ItemStack[] items = player.getInventory().getContents();
                     
                     Kit newKit = new Kit(kitName, kitName, items, armor);
-                    newKit.setIcon(player.getInventory().getItemInMainHand().clone());
+                    
+                    // Set icon to first non-null item or default sword
+                    ItemStack icon = null;
+                    for (ItemStack item : items) {
+                        if (item != null && item.getType() != Material.AIR) {
+                            icon = item.clone();
+                            icon.setAmount(1);
+                            break;
+                        }
+                    }
+                    if (icon == null) {
+                        icon = new ItemStack(Material.IRON_SWORD);
+                    }
+                    newKit.setIcon(icon);
                     
                     plugin.getKitManager().addKit(newKit);
                     plugin.getKitManager().saveKit(newKit);
@@ -391,5 +404,10 @@ public class KitEditorGui implements Listener {
                 }
             });
         }
+    }
+    
+    // Add this method for compatibility with MangoCommand
+    public void reloadConfigs() {
+        plugin.getLogger().info("Kit editor configs reloaded.");
     }
 }

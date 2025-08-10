@@ -145,6 +145,11 @@ public class KitManager {
         saveKit(kit);
         plugin.getLogger().info("Created new kit: " + name + " by " + player.getName());
     }
+    
+    // Add method to add a kit to the manager
+    public void addKit(Kit kit) {
+        kits.put(kit.getName(), kit);
+    }
 
     public void saveKit(Kit kit) {
         File kitFile = new File(kitsDir, kit.getName() + ".yml");

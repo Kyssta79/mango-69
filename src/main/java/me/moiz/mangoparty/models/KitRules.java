@@ -8,7 +8,6 @@ public class KitRules {
     private boolean instantTnt;
     
     public KitRules() {
-        // Default values
         this.naturalHealthRegen = true;
         this.blockBreak = false;
         this.blockPlace = false;
@@ -16,12 +15,7 @@ public class KitRules {
         this.instantTnt = false;
     }
     
-    // Natural Health Regeneration
     public boolean isNaturalHealthRegen() {
-        return naturalHealthRegen;
-    }
-    
-    public boolean isNaturalHealthRegeneration() {
         return naturalHealthRegen;
     }
     
@@ -29,16 +23,7 @@ public class KitRules {
         this.naturalHealthRegen = naturalHealthRegen;
     }
     
-    public void setNaturalHealthRegeneration(boolean naturalHealthRegen) {
-        this.naturalHealthRegen = naturalHealthRegen;
-    }
-    
-    // Block Breaking
     public boolean isBlockBreak() {
-        return blockBreak;
-    }
-    
-    public boolean isBlockBreaking() {
         return blockBreak;
     }
     
@@ -46,16 +31,7 @@ public class KitRules {
         this.blockBreak = blockBreak;
     }
     
-    public void setBlockBreaking(boolean blockBreak) {
-        this.blockBreak = blockBreak;
-    }
-    
-    // Block Placing
     public boolean isBlockPlace() {
-        return blockPlace;
-    }
-    
-    public boolean isBlockPlacing() {
         return blockPlace;
     }
     
@@ -63,8 +39,22 @@ public class KitRules {
         this.blockPlace = blockPlace;
     }
     
-    public void setBlockPlacing(boolean blockPlace) {
-        this.blockPlace = blockPlace;
+    // Block Breaking
+    public boolean isBlockBreaking() {
+        return blockBreak;
+    }
+    
+    public void setBlockBreaking(boolean blockBreaking) {
+        this.blockBreak = blockBreaking;
+    }
+    
+    // Block Placing
+    public boolean isBlockPlacing() {
+        return blockPlace;
+    }
+    
+    public void setBlockPlacing(boolean blockPlacing) {
+        this.blockPlace = blockPlacing;
     }
     
     // Damage Multiplier
