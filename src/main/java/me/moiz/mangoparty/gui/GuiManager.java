@@ -4,6 +4,7 @@ import me.moiz.mangoparty.MangoParty;
 import me.moiz.mangoparty.models.Kit;
 import me.moiz.mangoparty.models.Party;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -65,16 +66,32 @@ public class GuiManager implements Listener {
         plugin.getLogger().info("GUI configs reloaded.");
     }
     
+    // Helper method to translate color codes
+    private String translateColors(String text) {
+        if (text == null) return null;
+        return ChatColor.translateAlternateColorCodes('&', text);
+    }
+    
+    // Helper method to translate color codes in a list
+    private List<String> translateColors(List<String> list) {
+        if (list == null) return null;
+        List<String> translated = new ArrayList<>();
+        for (String line : list) {
+            translated.add(translateColors(line));
+        }
+        return translated;
+    }
+    
     public void openMatchTypeGui(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, "§6Select Match Type");
+        Inventory gui = Bukkit.createInventory(null, 27, translateColors("&6Select Match Type"));
         
         // Party Split item
         ItemStack splitItem = new ItemStack(Material.IRON_SWORD);
         ItemMeta splitMeta = splitItem.getItemMeta();
-        splitMeta.setDisplayName("§aParty Split");
+        splitMeta.setDisplayName(translateColors("&aParty Split"));
         List<String> splitLore = new ArrayList<>();
-        splitLore.add("§7Divide party into teams");
-        splitLore.add("§7and fight each other");
+        splitLore.add(translateColors("&7Divide party into teams"));
+        splitLore.add(translateColors("&7and fight each other"));
         splitMeta.setLore(splitLore);
         splitItem.setItemMeta(splitMeta);
         gui.setItem(10, splitItem);
@@ -82,10 +99,10 @@ public class GuiManager implements Listener {
         // Party FFA item
         ItemStack ffaItem = new ItemStack(Material.DIAMOND_SWORD);
         ItemMeta ffaMeta = ffaItem.getItemMeta();
-        ffaMeta.setDisplayName("§cParty FFA");
+        ffaMeta.setDisplayName(translateColors("&cParty FFA"));
         List<String> ffaLore = new ArrayList<>();
-        ffaLore.add("§7Free for all battle");
-        ffaLore.add("§7Last player standing wins");
+        ffaLore.add(translateColors("&7Free for all battle"));
+        ffaLore.add(translateColors("&7Last player standing wins"));
         ffaMeta.setLore(ffaLore);
         ffaItem.setItemMeta(ffaMeta);
         gui.setItem(12, ffaItem);
@@ -93,10 +110,10 @@ public class GuiManager implements Listener {
         // Party vs Party item
         ItemStack pvpItem = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta pvpMeta = pvpItem.getItemMeta();
-        pvpMeta.setDisplayName("§eParty vs Party");
+        pvpMeta.setDisplayName(translateColors("&eParty vs Party"));
         List<String> pvpLore = new ArrayList<>();
-        pvpLore.add("§7Challenge another party");
-        pvpLore.add("§7to an epic team battle");
+        pvpLore.add(translateColors("&7Challenge another party"));
+        pvpLore.add(translateColors("&7to an epic team battle"));
         pvpMeta.setLore(pvpLore);
         pvpItem.setItemMeta(pvpMeta);
         gui.setItem(14, pvpItem);
@@ -104,30 +121,30 @@ public class GuiManager implements Listener {
         // Queue modes
         ItemStack queue1v1 = new ItemStack(Material.GOLDEN_SWORD);
         ItemMeta queue1v1Meta = queue1v1.getItemMeta();
-        queue1v1Meta.setDisplayName("§61v1 Queue");
+        queue1v1Meta.setDisplayName(translateColors("&61v1 Queue"));
         List<String> queue1v1Lore = new ArrayList<>();
-        queue1v1Lore.add("§7Join 1v1 ranked queue");
-        queue1v1Lore.add("§7Fight solo opponents");
+        queue1v1Lore.add(translateColors("&7Join 1v1 ranked queue"));
+        queue1v1Lore.add(translateColors("&7Fight solo opponents"));
         queue1v1Meta.setLore(queue1v1Lore);
         queue1v1.setItemMeta(queue1v1Meta);
         gui.setItem(19, queue1v1);
         
         ItemStack queue2v2 = new ItemStack(Material.GOLDEN_AXE);
         ItemMeta queue2v2Meta = queue2v2.getItemMeta();
-        queue2v2Meta.setDisplayName("§62v2 Queue");
+        queue2v2Meta.setDisplayName(translateColors("&62v2 Queue"));
         List<String> queue2v2Lore = new ArrayList<>();
-        queue2v2Lore.add("§7Join 2v2 team queue");
-        queue2v2Lore.add("§7Fight with a teammate");
+        queue2v2Lore.add(translateColors("&7Join 2v2 team queue"));
+        queue2v2Lore.add(translateColors("&7Fight with a teammate"));
         queue2v2Meta.setLore(queue2v2Lore);
         queue2v2.setItemMeta(queue2v2Meta);
         gui.setItem(21, queue2v2);
         
         ItemStack queue3v3 = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta queue3v3Meta = queue3v3.getItemMeta();
-        queue3v3Meta.setDisplayName("§63v3 Queue");
+        queue3v3Meta.setDisplayName(translateColors("&63v3 Queue"));
         List<String> queue3v3Lore = new ArrayList<>();
-        queue3v3Lore.add("§7Join 3v3 team queue");
-        queue3v3Lore.add("§7Epic team battles");
+        queue3v3Lore.add(translateColors("&7Join 3v3 team queue"));
+        queue3v3Lore.add(translateColors("&7Epic team battles"));
         queue3v3Meta.setLore(queue3v3Lore);
         queue3v3.setItemMeta(queue3v3Meta);
         gui.setItem(23, queue3v3);
@@ -138,11 +155,11 @@ public class GuiManager implements Listener {
     public void openPartyDuelGui(Player player) {
         Party playerParty = plugin.getPartyManager().getParty(player);
         if (playerParty == null) {
-            player.sendMessage("§cYou are not in a party!");
+            player.sendMessage(translateColors("&cYou are not in a party!"));
             return;
         }
         
-        Inventory gui = Bukkit.createInventory(null, 54, "§6Challenge Party");
+        Inventory gui = Bukkit.createInventory(null, 54, translateColors("&6Challenge Party"));
         
         int slot = 0;
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -157,16 +174,16 @@ public class GuiManager implements Listener {
                 ItemStack head = new ItemStack(Material.PLAYER_HEAD);
                 SkullMeta meta = (SkullMeta) head.getItemMeta();
                 meta.setOwningPlayer(online);
-                meta.setDisplayName("§e" + online.getName() + "'s Party");
+                meta.setDisplayName(translateColors("&e" + online.getName() + "'s Party"));
                 
                 List<String> lore = new ArrayList<>();
-                lore.add("§7Members: §f" + otherParty.getSize());
+                lore.add(translateColors("&7Members: &f" + otherParty.getSize()));
                 for (Player member : otherParty.getOnlineMembers()) {
                     if (lore.size() < 8) { // Limit lore size
-                        lore.add("§8• §7" + member.getName());
+                        lore.add(translateColors("&8• &7" + member.getName()));
                     }
                 }
-                lore.add("§aClick to challenge!");
+                lore.add(translateColors("&aClick to challenge!"));
                 meta.setLore(lore);
                 head.setItemMeta(meta);
                 
@@ -180,7 +197,7 @@ public class GuiManager implements Listener {
     
     public void openKitGui(Player player, String matchType) {
         YamlConfiguration config = "split".equalsIgnoreCase(matchType) ? splitConfig : ffaConfig;
-        String title = config.getString("title", "§6Select Kit");
+        String title = translateColors(config.getString("title", "&6Select Kit"));
         int size = config.getInt("size", 27);
         
         Inventory gui = Bukkit.createInventory(null, size, title);
@@ -197,8 +214,8 @@ public class GuiManager implements Listener {
                     
                     if (kit != null) {
                         int slot = kitSection.getInt("slot");
-                        String displayName = kitSection.getString("name", kit.getDisplayName());
-                        List<String> lore = kitSection.getStringList("lore");
+                        String displayName = translateColors(kitSection.getString("name", kit.getDisplayName()));
+                        List<String> lore = translateColors(kitSection.getStringList("lore"));
                         
                         ItemStack item = kit.getIcon() != null ? kit.getIcon().clone() : new ItemStack(Material.IRON_SWORD);
                         ItemMeta meta = item.getItemMeta();
@@ -223,7 +240,7 @@ public class GuiManager implements Listener {
     
     public void openQueueKitGui(Player player, String mode) {
         YamlConfiguration config = loadQueueConfig(mode);
-        String title = "§6" + mode.toUpperCase() + " Kit Selection";
+        String title = translateColors("&6" + mode.toUpperCase() + " Kit Selection");
         int size = 27; // Default size
         
         Inventory gui = Bukkit.createInventory(null, size, title);
@@ -241,11 +258,22 @@ public class GuiManager implements Listener {
                     if (kit != null) {
                         int slot = kitSection.getInt("slot");
                         String materialName = kitSection.getString("material", "IRON_SWORD");
-                        String displayName = kitSection.getString("name", kit.getDisplayName());
-                        List<String> lore = new ArrayList<>(kitSection.getStringList("lore"));
+                        String displayName = translateColors(kitSection.getString("name", kit.getDisplayName()));
+                        List<String> lore = new ArrayList<>();
                         
-                        // Replace {queued} placeholder
+                        // Add configured lore with color translation
+                        List<String> configLore = kitSection.getStringList("lore");
+                        for (String line : configLore) {
+                            lore.add(translateColors(line));
+                        }
+                        
+                        // Add queue information
                         int queueCount = plugin.getQueueManager().getQueueCount(mode, kitName);
+                        int requiredPlayers = getRequiredPlayers(mode);
+                        lore.add("");
+                        lore.add(translateColors("&7Queued: &e" + queueCount + "&7/&e" + requiredPlayers));
+                        
+                        // Replace {queued} placeholder if it exists
                         for (int i = 0; i < lore.size(); i++) {
                             lore.set(i, lore.get(i).replace("{queued}", String.valueOf(queueCount)));
                         }
@@ -269,10 +297,19 @@ public class GuiManager implements Listener {
         
         player.openInventory(gui);
     }
+    
+    private int getRequiredPlayers(String mode) {
+        switch (mode) {
+            case "1v1": return 2;
+            case "2v2": return 4;
+            case "3v3": return 6;
+            default: return 2;
+        }
+    }
 
     public void openPartyVsPartyKitGui(Player challenger, Player challengedLeader) {
         // Use split config for party vs party
-        String title = "§6Select Kit for Party Duel";
+        String title = translateColors("&6Select Kit for Party Duel");
         int size = splitConfig.getInt("size", 27);
         
         Inventory gui = Bukkit.createInventory(null, size, title);
@@ -289,10 +326,11 @@ public class GuiManager implements Listener {
                     
                     if (kit != null) {
                         int slot = kitSection.getInt("slot");
-                        String displayName = kitSection.getString("name", kit.getDisplayName());
-                        List<String> lore = new ArrayList<>(kitSection.getStringList("lore"));
-                        lore.add("§7");
-                        lore.add("§eClick to challenge with this kit!");
+                        String displayName = translateColors(kitSection.getString("name", kit.getDisplayName()));
+                        List<String> lore = translateColors(kitSection.getStringList("lore"));
+                        if (lore == null) lore = new ArrayList<>();
+                        lore.add("");
+                        lore.add(translateColors("&eClick to challenge with this kit!"));
                         
                         ItemStack item = kit.getIcon() != null ? kit.getIcon().clone() : new ItemStack(Material.IRON_SWORD);
                         ItemMeta meta = item.getItemMeta();
@@ -330,7 +368,7 @@ public class GuiManager implements Listener {
     private void createDefaultQueueConfig(File configFile, String mode) {
         YamlConfiguration config = new YamlConfiguration();
         
-        config.set("title", "§6" + mode.toUpperCase() + " Kit Selection");
+        config.set("title", "&6" + mode.toUpperCase() + " Kit Selection");
         config.set("size", 27);
         
         // Add some default kit slots (empty, to be populated by admin)
@@ -350,7 +388,7 @@ public class GuiManager implements Listener {
         Player player = (Player) event.getWhoClicked();
         String title = event.getView().getTitle();
         
-        if (title.equals("§6Select Match Type")) {
+        if (title.equals(translateColors("&6Select Match Type"))) {
             event.setCancelled(true);
             
             ItemStack clicked = event.getCurrentItem();
@@ -375,7 +413,7 @@ public class GuiManager implements Listener {
                 // 3v3 Queue selected
                 openQueueKitGui(player, "3v3");
             }
-        } else if (title.equals("§6Challenge Party")) {
+        } else if (title.equals(translateColors("&6Challenge Party"))) {
             event.setCancelled(true);
             
             ItemStack clicked = event.getCurrentItem();
@@ -431,7 +469,7 @@ public class GuiManager implements Listener {
         
         Player target = Bukkit.getPlayer(targetId);
         if (target == null || !target.isOnline()) {
-            player.sendMessage("§cTarget player is no longer online!");
+            player.sendMessage(translateColors("&cTarget player is no longer online!"));
             player.closeInventory();
             return;
         }
@@ -484,19 +522,19 @@ public class GuiManager implements Listener {
         // Get player's party
         Party party = plugin.getPartyManager().getParty(player);
         if (party == null || !party.isLeader(player.getUniqueId())) {
-            player.sendMessage("§cYou must be a party leader to start matches!");
+            player.sendMessage(translateColors("&cYou must be a party leader to start matches!"));
             return;
         }
         
         // Get an available arena
         Arena arena = plugin.getArenaManager().getAvailableArena();
         if (arena == null) {
-            player.sendMessage("§cNo available arenas! All arenas are currently in use.");
+            player.sendMessage(translateColors("&cNo available arenas! All arenas are currently in use."));
             return;
         }
         
         // Start the match
         plugin.getMatchManager().startMatch(party, arena, kit, matchType);
-        player.sendMessage("§aStarting " + matchType + " match with kit: " + kit.getDisplayName());
+        player.sendMessage(translateColors("&aStarting " + matchType + " match with kit: " + kit.getDisplayName()));
     }
 }

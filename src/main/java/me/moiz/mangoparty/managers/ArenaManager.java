@@ -325,25 +325,44 @@ public class ArenaManager {
             
                 debugLog("Attempting to save to: " + schemFile.getPath());
             
-                // Use the SPONGE_SCHEMATIC format directly
-                try (FileOutputStream fos = new FileOutputStream(schemFile)) {
-                    ClipboardFormat format = ClipboardFormats.findByAlias("sponge");
-                    if (format == null) {
-                        // Try to find by file extension
-                        format = ClipboardFormats.findByFile(schemFile);
-                    }
+                // Try multiple format approaches
+                ClipboardFormat format = null;
                 
-                    if (format != null) {
-                        debugLog("Using format: " + format.getName());
-                        try (ClipboardWriter writer = format.getWriter(fos)) {
-                            writer.write(clipboard);
-                            fos.flush();
-                            debugLog("Successfully wrote .schem file, size: " + schemFile.length() + " bytes");
+                // Try to get the format by file first
+                format = ClipboardFormats.findByFile(schemFile);
+                
+                if (format == null) {
+                    // Try to get all available formats and find sponge
+                    for (ClipboardFormat availableFormat : ClipboardFormats.getAll()) {
+                        if (availableFormat.getName().toLowerCase().contains("sponge") || 
+                            availableFormat.getName().toLowerCase().contains("schem")) {
+                            format = availableFormat;
+                            break;
                         }
-                    } else {
-                        plugin.getLogger().severe("Could not find sponge schematic format!");
-                        return false;
                     }
+                }
+                
+                if (format == null) {
+                    // Fallback to legacy schematic format
+                    File legacyFile = new File(schematicsDir, arena.getName() + ".schematic");
+                    format = ClipboardFormats.findByFile(legacyFile);
+                    if (format != null) {
+                        schemFile = legacyFile;
+                        debugLog("Falling back to legacy .schematic format");
+                    }
+                }
+                
+                if (format != null) {
+                    debugLog("Using format: " + format.getName());
+                    try (FileOutputStream fos = new FileOutputStream(schemFile);
+                         ClipboardWriter writer = format.getWriter(fos)) {
+                        writer.write(clipboard);
+                        fos.flush();
+                        debugLog("Successfully wrote schematic file, size: " + schemFile.length() + " bytes");
+                    }
+                } else {
+                    plugin.getLogger().severe("Could not find any suitable schematic format!");
+                    return false;
                 }
             }
         
