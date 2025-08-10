@@ -241,7 +241,7 @@ public class MatchManager {
             player.setFlySpeed(0f);
             
             // Give kit immediately
-            plugin.getKitManager().giveKit(player, match.getKit());
+            plugin.getKitManager().giveKit(player, match.getKit().getName());
         }
         
         // Start scoreboards

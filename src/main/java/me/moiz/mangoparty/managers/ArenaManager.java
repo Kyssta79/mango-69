@@ -321,8 +321,8 @@ public class ArenaManager {
                 // Get the Sponge schematic format specifically
                 ClipboardFormat format = ClipboardFormats.findByAlias("sponge");
                 if (format == null) {
-                    // Try alternative ways to get the format
-                    format = ClipboardFormats.findByExtension("schem");
+                    // Try to find by file
+                    format = ClipboardFormats.findByFile(schemFile);
                 }
                 
                 if (format == null) {
