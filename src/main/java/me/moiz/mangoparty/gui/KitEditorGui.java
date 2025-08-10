@@ -125,12 +125,12 @@ public class KitEditorGui implements Listener {
 
     // Inner class for individual kit editor instances
     private static class KitEditorInstance implements Listener {
-        private MangoParty plugin;
-        private Player player;
+        private final MangoParty plugin;
+        private final Player player;
         private Kit kit;
         private Inventory inventory;
-        private boolean isNewKit;
-        private String tempKitName;
+        private final boolean isNewKit;
+        private final String tempKitName;
 
         public KitEditorInstance(MangoParty plugin, Player player, Kit kit) {
             this.plugin = plugin;
@@ -309,12 +309,14 @@ public class KitEditorGui implements Listener {
                 kit.setRules(rules);
             }
             
+            final KitRules finalRules = rules;
+            
             // Block Breaking toggle
-            ItemStack breakingItem = new ItemStack(rules.isBlockBreaking() ? Material.LIME_DYE : Material.GRAY_DYE);
+            ItemStack breakingItem = new ItemStack(finalRules.isBlockBreaking() ? Material.LIME_DYE : Material.GRAY_DYE);
             ItemMeta breakingMeta = breakingItem.getItemMeta();
             breakingMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&eBlock Breaking"));
             List<String> breakingLore = new ArrayList<>();
-            breakingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (rules.isBlockBreaking() ? "&aEnabled" : "&cDisabled")));
+            breakingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (finalRules.isBlockBreaking() ? "&aEnabled" : "&cDisabled")));
             breakingLore.add("");
             breakingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to toggle"));
             breakingMeta.setLore(breakingLore);
@@ -322,11 +324,11 @@ public class KitEditorGui implements Listener {
             rulesGui.setItem(10, breakingItem);
             
             // Block Placing toggle
-            ItemStack placingItem = new ItemStack(rules.isBlockPlacing() ? Material.LIME_DYE : Material.GRAY_DYE);
+            ItemStack placingItem = new ItemStack(finalRules.isBlockPlacing() ? Material.LIME_DYE : Material.GRAY_DYE);
             ItemMeta placingMeta = placingItem.getItemMeta();
             placingMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&eBlock Placing"));
             List<String> placingLore = new ArrayList<>();
-            placingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (rules.isBlockPlacing() ? "&aEnabled" : "&cDisabled")));
+            placingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (finalRules.isBlockPlacing() ? "&aEnabled" : "&cDisabled")));
             placingLore.add("");
             placingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to toggle"));
             placingMeta.setLore(placingLore);
@@ -358,12 +360,12 @@ public class KitEditorGui implements Listener {
                     String displayName = clicked.getItemMeta().getDisplayName();
                     
                     if (displayName.contains("Block Breaking")) {
-                        rules.setBlockBreaking(!rules.isBlockBreaking());
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock breaking " + (rules.isBlockBreaking() ? "&aenabled" : "&cdisabled")));
+                        finalRules.setBlockBreaking(!finalRules.isBlockBreaking());
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock breaking " + (finalRules.isBlockBreaking() ? "&aenabled" : "&cdisabled")));
                         openKitRulesGui(); // Refresh
                     } else if (displayName.contains("Block Placing")) {
-                        rules.setBlockPlacing(!rules.isBlockPlacing());
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock placing " + (rules.isBlockPlacing() ? "&aenabled" : "&cdisabled")));
+                        finalRules.setBlockPlacing(!finalRules.isBlockPlacing());
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock placing " + (finalRules.isBlockPlacing() ? "&aenabled" : "&cdisabled")));
                         openKitRulesGui(); // Refresh
                     } else if (displayName.contains("Back to Kit Editor")) {
                         HandlerList.unregisterAll(this);

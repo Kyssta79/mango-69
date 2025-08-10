@@ -5,12 +5,14 @@ import me.moiz.mangoparty.models.Kit;
 import me.moiz.mangoparty.models.KitRules;
 import me.moiz.mangoparty.models.Match;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 
 public class KitRulesListener implements Listener {
     private MangoParty plugin;
@@ -26,11 +28,11 @@ public class KitRulesListener implements Listener {
         Player player = (Player) event.getEntity();
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
-        if (match != null && event.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED) {
-            Kit kit = match.getKit();
+        if (match != null) {
+            Kit kit = plugin.getKitManager().getKit(match.getKitName());
             if (kit != null && kit.getRules() != null) {
-                KitRules rules = kit.getRules();
-                if (!rules.isNaturalHealthRegen()) {
+                if (!kit.getRules().isNaturalHealthRegen() && 
+                    event.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED) {
                     event.setCancelled(true);
                 }
             }
@@ -43,10 +45,9 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
         if (match != null) {
-            Kit kit = match.getKit();
+            Kit kit = plugin.getKitManager().getKit(match.getKitName());
             if (kit != null && kit.getRules() != null) {
-                KitRules rules = kit.getRules();
-                if (!rules.isBlockBreak()) {
+                if (!kit.getRules().isBlockBreak()) {
                     event.setCancelled(true);
                 }
             }
@@ -59,13 +60,26 @@ public class KitRulesListener implements Listener {
         Match match = plugin.getMatchManager().getPlayerMatch(player);
         
         if (match != null) {
-            Kit kit = match.getKit();
+            Kit kit = plugin.getKitManager().getKit(match.getKitName());
             if (kit != null && kit.getRules() != null) {
-                KitRules rules = kit.getRules();
-                if (!rules.isBlockPlace()) {
+                if (!kit.getRules().isBlockPlace()) {
                     event.setCancelled(true);
-                } else if (rules.isInstantTnt() && event.getBlock().getType().name().contains("TNT")) {
-                    // Handle instant TNT logic here if needed
+                }
+            }
+        }
+    }
+    
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.getEntity() instanceof TNTPrimed) {
+            TNTPrimed tnt = (TNTPrimed) event.getEntity();
+            
+            // Check if TNT is in a match area
+            Match match = plugin.getMatchManager().getMatchAtLocation(event.getLocation());
+            if (match != null) {
+                Kit kit = plugin.getKitManager().getKit(match.getKitName());
+                if (kit != null && kit.getRules() != null && kit.getRules().isInstantTnt()) {
+                    tnt.setFuseTicks(1); // Instant explosion
                 }
             }
         }
@@ -73,16 +87,16 @@ public class KitRulesListener implements Listener {
     
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (!(event.getEntity() instanceof Player) || !(event.getDamager() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getDamager() instanceof Player)) return;
         
         Player damaged = (Player) event.getEntity();
         Match match = plugin.getMatchManager().getPlayerMatch(damaged);
         
         if (match != null) {
-            Kit kit = match.getKit();
+            Kit kit = plugin.getKitManager().getKit(match.getKitName());
             if (kit != null && kit.getRules() != null) {
-                KitRules rules = kit.getRules();
-                double multiplier = rules.getDamageMultiplier();
+                double multiplier = kit.getRules().getDamageMultiplier();
                 if (multiplier != 1.0) {
                     event.setDamage(event.getDamage() * multiplier);
                 }

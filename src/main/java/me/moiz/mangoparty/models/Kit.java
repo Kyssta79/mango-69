@@ -12,16 +12,16 @@ public class Kit {
     private ItemStack[] items;
     private ItemStack[] armor;
     private ItemStack icon;
-    private KitRules rules;
     private List<PotionEffect> effects;
+    private KitRules rules;
 
     public Kit(String name) {
         this.name = name;
         this.displayName = name;
-        this.items = new ItemStack[36]; // 36 inventory slots
-        this.armor = new ItemStack[4]; // 4 armor slots
-        this.rules = new KitRules();
+        this.items = new ItemStack[36];
+        this.armor = new ItemStack[4];
         this.effects = new ArrayList<>();
+        this.rules = new KitRules();
     }
 
     public Kit(String name, String displayName, ItemStack[] items, ItemStack[] armor) {
@@ -29,8 +29,8 @@ public class Kit {
         this.displayName = displayName;
         this.items = items != null ? items : new ItemStack[36];
         this.armor = armor != null ? armor : new ItemStack[4];
-        this.rules = new KitRules();
         this.effects = new ArrayList<>();
+        this.rules = new KitRules();
     }
 
     // Getters and setters
@@ -43,7 +43,7 @@ public class Kit {
     }
 
     public String getDisplayName() {
-        return displayName;
+        return displayName != null ? displayName : name;
     }
 
     public void setDisplayName(String displayName) {
@@ -55,7 +55,7 @@ public class Kit {
     }
 
     public void setItems(ItemStack[] items) {
-        this.items = items != null ? items : new ItemStack[36];
+        this.items = items;
     }
 
     public ItemStack[] getArmor() {
@@ -63,7 +63,7 @@ public class Kit {
     }
 
     public void setArmor(ItemStack[] armor) {
-        this.armor = armor != null ? armor : new ItemStack[4];
+        this.armor = armor;
     }
 
     public ItemStack getIcon() {
@@ -72,14 +72,6 @@ public class Kit {
 
     public void setIcon(ItemStack icon) {
         this.icon = icon;
-    }
-
-    public KitRules getRules() {
-        return rules;
-    }
-
-    public void setRules(KitRules rules) {
-        this.rules = rules != null ? rules : new KitRules();
     }
 
     public List<PotionEffect> getEffects() {
@@ -91,7 +83,18 @@ public class Kit {
     }
 
     public void addEffect(PotionEffect effect) {
-        this.effects.add(effect);
+        if (effects == null) {
+            effects = new ArrayList<>();
+        }
+        effects.add(effect);
+    }
+
+    public KitRules getRules() {
+        return rules;
+    }
+
+    public void setRules(KitRules rules) {
+        this.rules = rules;
     }
 
     // Individual item methods

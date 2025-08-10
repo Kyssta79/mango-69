@@ -3,6 +3,7 @@ package me.moiz.mangoparty.managers;
 import me.moiz.mangoparty.MangoParty;
 import me.moiz.mangoparty.models.Kit;
 import me.moiz.mangoparty.models.KitRules;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,33 +15,140 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class KitManager {
     private MangoParty plugin;
     private Map<String, Kit> kits;
     private File kitsFile;
     private YamlConfiguration kitsConfig;
-    
+
     public KitManager(MangoParty plugin) {
         this.plugin = plugin;
         this.kits = new HashMap<>();
-        this.kitsFile = new File(plugin.getDataFolder(), "kits.yml");
         loadKits();
     }
-    
+
     private void loadKits() {
+        kitsFile = new File(plugin.getDataFolder(), "kits.yml");
         if (!kitsFile.exists()) {
             plugin.saveResource("kits.yml", false);
         }
-        
+
         kitsConfig = YamlConfiguration.loadConfiguration(kitsFile);
         
         ConfigurationSection kitsSection = kitsConfig.getConfigurationSection("kits");
         if (kitsSection != null) {
             for (String kitName : kitsSection.getKeys(false)) {
-                Kit kit = loadKitFromConfig(kitName, kitsSection.getConfigurationSection(kitName));
-                if (kit != null) {
+                ConfigurationSection kitSection = kitsSection.getConfigurationSection(kitName);
+                if (kitSection != null) {
+                    Kit kit = new Kit(kitName);
+                    
+                    // Load display name
+                    if (kitSection.contains("displayName")) {
+                        kit.setDisplayName(kitSection.getString("displayName"));
+                    }
+                    
+                    // Load icon
+                    if (kitSection.contains("icon")) {
+                        ConfigurationSection iconSection = kitSection.getConfigurationSection("icon");
+                        if (iconSection != null) {
+                            Material material = Material.valueOf(iconSection.getString("material", "IRON_SWORD"));
+                            ItemStack icon = new ItemStack(material);
+                            ItemMeta meta = icon.getItemMeta();
+                            if (iconSection.contains("name")) {
+                                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', iconSection.getString("name")));
+                            }
+                            if (iconSection.contains("lore")) {
+                                List<String> lore = iconSection.getStringList("lore");
+                                for (int i = 0; i < lore.size(); i++) {
+                                    lore.set(i, ChatColor.translateAlternateColorCodes('&', lore.get(i)));
+                                }
+                                meta.setLore(lore);
+                            }
+                            icon.setItemMeta(meta);
+                            kit.setIcon(icon);
+                        }
+                    }
+                    
+                    // Load items
+                    if (kitSection.contains("items")) {
+                        ConfigurationSection itemsSection = kitSection.getConfigurationSection("items");
+                        if (itemsSection != null) {
+                            for (String slotStr : itemsSection.getKeys(false)) {
+                                try {
+                                    int slot = Integer.parseInt(slotStr);
+                                    ConfigurationSection itemSection = itemsSection.getConfigurationSection(slotStr);
+                                    if (itemSection != null) {
+                                        ItemStack item = loadItemFromConfig(itemSection);
+                                        kit.setItem(slot, item);
+                                    }
+                                } catch (NumberFormatException e) {
+                                    plugin.getLogger().warning("Invalid slot number in kit " + kitName + ": " + slotStr);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Load armor
+                    if (kitSection.contains("armor")) {
+                        ConfigurationSection armorSection = kitSection.getConfigurationSection("armor");
+                        if (armorSection != null) {
+                            if (armorSection.contains("helmet")) {
+                                ItemStack helmet = loadItemFromConfig(armorSection.getConfigurationSection("helmet"));
+                                kit.setHelmet(helmet);
+                            }
+                            if (armorSection.contains("chestplate")) {
+                                ItemStack chestplate = loadItemFromConfig(armorSection.getConfigurationSection("chestplate"));
+                                kit.setChestplate(chestplate);
+                            }
+                            if (armorSection.contains("leggings")) {
+                                ItemStack leggings = loadItemFromConfig(armorSection.getConfigurationSection("leggings"));
+                                kit.setLeggings(leggings);
+                            }
+                            if (armorSection.contains("boots")) {
+                                ItemStack boots = loadItemFromConfig(armorSection.getConfigurationSection("boots"));
+                                kit.setBoots(boots);
+                            }
+                        }
+                    }
+                    
+                    // Load effects
+                    if (kitSection.contains("effects")) {
+                        List<String> effectStrings = kitSection.getStringList("effects");
+                        for (String effectString : effectStrings) {
+                            try {
+                                String[] parts = effectString.split(":");
+                                PotionEffectType type = PotionEffectType.getByName(parts[0]);
+                                int amplifier = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+                                int duration = parts.length > 2 ? Integer.parseInt(parts[2]) : Integer.MAX_VALUE;
+                                
+                                if (type != null) {
+                                    PotionEffect effect = new PotionEffect(type, duration, amplifier);
+                                    kit.addEffect(effect);
+                                }
+                            } catch (Exception e) {
+                                plugin.getLogger().warning("Invalid effect format in kit " + kitName + ": " + effectString);
+                            }
+                        }
+                    }
+                    
+                    // Load rules
+                    if (kitSection.contains("rules")) {
+                        ConfigurationSection rulesSection = kitSection.getConfigurationSection("rules");
+                        if (rulesSection != null) {
+                            KitRules rules = new KitRules();
+                            rules.setBlockBreaking(rulesSection.getBoolean("blockBreaking", false));
+                            rules.setBlockPlacing(rulesSection.getBoolean("blockPlacing", false));
+                            rules.setNaturalHealthRegen(rulesSection.getBoolean("naturalHealthRegen", true));
+                            rules.setInstantTnt(rulesSection.getBoolean("instantTnt", false));
+                            rules.setDamageMultiplier(rulesSection.getDouble("damageMultiplier", 1.0));
+                            kit.setRules(rules);
+                        }
+                    }
+                    
                     kits.put(kitName, kit);
                 }
             }
@@ -48,267 +156,45 @@ public class KitManager {
         
         plugin.getLogger().info("Loaded " + kits.size() + " kits");
     }
-    
-    private Kit loadKitFromConfig(String name, ConfigurationSection section) {
-        try {
-            String displayName = section.getString("displayName", name);
-            
-            // Create kit with basic constructor
-            Kit kit = new Kit(name);
-            kit.setDisplayName(displayName);
-            
-            // Load icon
-            if (section.contains("icon")) {
-                ConfigurationSection iconSection = section.getConfigurationSection("icon");
-                if (iconSection != null) {
-                    Material material = Material.valueOf(iconSection.getString("material", "IRON_SWORD"));
-                    ItemStack icon = new ItemStack(material);
-                    
-                    if (iconSection.contains("name")) {
-                        ItemMeta meta = icon.getItemMeta();
-                        meta.setDisplayName(iconSection.getString("name"));
-                        icon.setItemMeta(meta);
-                    }
-                    
-                    kit.setIcon(icon);
-                }
+
+    private ItemStack loadItemFromConfig(ConfigurationSection section) {
+        if (section == null) return null;
+        
+        Material material = Material.valueOf(section.getString("material", "STONE"));
+        int amount = section.getInt("amount", 1);
+        ItemStack item = new ItemStack(material, amount);
+        
+        if (section.contains("name") || section.contains("lore")) {
+            ItemMeta meta = item.getItemMeta();
+            if (section.contains("name")) {
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', section.getString("name")));
             }
-            
-            // Load items
-            if (section.contains("items")) {
-                List<Map<?, ?>> itemsList = section.getMapList("items");
-                for (Map<?, ?> itemMap : itemsList) {
-                    int slot = (Integer) itemMap.get("slot");
-                    String materialName = (String) itemMap.get("material");
-                    int amount = itemMap.containsKey("amount") ? (Integer) itemMap.get("amount") : 1;
-                    
-                    Material material = Material.valueOf(materialName);
-                    ItemStack item = new ItemStack(material, amount);
-                    
-                    if (itemMap.containsKey("name")) {
-                        ItemMeta meta = item.getItemMeta();
-                        meta.setDisplayName((String) itemMap.get("name"));
-                        item.setItemMeta(meta);
-                    }
-                    
-                    kit.setItem(slot, item);
+            if (section.contains("lore")) {
+                List<String> lore = section.getStringList("lore");
+                for (int i = 0; i < lore.size(); i++) {
+                    lore.set(i, ChatColor.translateAlternateColorCodes('&', lore.get(i)));
                 }
+                meta.setLore(lore);
             }
-            
-            // Load armor
-            if (section.contains("armor")) {
-                ConfigurationSection armorSection = section.getConfigurationSection("armor");
-                if (armorSection.contains("helmet")) {
-                    kit.setHelmet(new ItemStack(Material.valueOf(armorSection.getString("helmet"))));
-                }
-                if (armorSection.contains("chestplate")) {
-                    kit.setChestplate(new ItemStack(Material.valueOf(armorSection.getString("chestplate"))));
-                }
-                if (armorSection.contains("leggings")) {
-                    kit.setLeggings(new ItemStack(Material.valueOf(armorSection.getString("leggings"))));
-                }
-                if (armorSection.contains("boots")) {
-                    kit.setBoots(new ItemStack(Material.valueOf(armorSection.getString("boots"))));
-                }
-            }
-            
-            // Load effects
-            if (section.contains("effects")) {
-                List<Map<?, ?>> effectsList = section.getMapList("effects");
-                for (Map<?, ?> effectMap : effectsList) {
-                    String effectName = (String) effectMap.get("type");
-                    int amplifier = effectMap.containsKey("amplifier") ? (Integer) effectMap.get("amplifier") : 0;
-                    int duration = effectMap.containsKey("duration") ? (Integer) effectMap.get("duration") : Integer.MAX_VALUE;
-                    
-                    PotionEffectType effectType = PotionEffectType.getByName(effectName);
-                    if (effectType != null) {
-                        kit.addEffect(new PotionEffect(effectType, duration, amplifier));
-                    }
-                }
-            }
-            
-            // Load rules
-            if (section.contains("rules")) {
-                ConfigurationSection rulesSection = section.getConfigurationSection("rules");
-                KitRules rules = new KitRules();
-                
-                if (rulesSection.contains("naturalHealthRegen")) {
-                    rules.setNaturalHealthRegen(rulesSection.getBoolean("naturalHealthRegen"));
-                }
-                if (rulesSection.contains("blockBreak")) {
-                    rules.setBlockBreak(rulesSection.getBoolean("blockBreak"));
-                }
-                if (rulesSection.contains("blockPlace")) {
-                    rules.setBlockPlace(rulesSection.getBoolean("blockPlace"));
-                }
-                if (rulesSection.contains("damageMultiplier")) {
-                    rules.setDamageMultiplier(rulesSection.getDouble("damageMultiplier"));
-                }
-                if (rulesSection.contains("instantTnt")) {
-                    rules.setInstantTnt(rulesSection.getBoolean("instantTnt"));
-                }
-                
-                kit.setRules(rules);
-            }
-            
-            return kit;
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to load kit '" + name + "': " + e.getMessage());
-            return null;
-        }
-    }
-    
-    public void saveKits() {
-        kitsConfig.set("kits", null); // Clear existing data
-        
-        for (Kit kit : kits.values()) {
-            saveKitToConfig(kit);
+            item.setItemMeta(meta);
         }
         
-        try {
-            kitsConfig.save(kitsFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save kits.yml: " + e.getMessage());
-        }
+        return item;
     }
-    
-    private void saveKitToConfig(Kit kit) {
-        String path = "kits." + kit.getName();
-        
-        kitsConfig.set(path + ".displayName", kit.getDisplayName());
-        
-        // Save icon
-        if (kit.getIcon() != null) {
-            kitsConfig.set(path + ".icon.material", kit.getIcon().getType().name());
-            if (kit.getIcon().hasItemMeta() && kit.getIcon().getItemMeta().hasDisplayName()) {
-                kitsConfig.set(path + ".icon.name", kit.getIcon().getItemMeta().getDisplayName());
-            }
-        }
-        
-        // Save items
-        List<Map<String, Object>> itemsList = new ArrayList<>();
-        for (int i = 0; i < 36; i++) {
-            ItemStack item = kit.getItem(i);
-            if (item != null && item.getType() != Material.AIR) {
-                Map<String, Object> itemMap = new HashMap<>();
-                itemMap.put("slot", i);
-                itemMap.put("material", item.getType().name());
-                itemMap.put("amount", item.getAmount());
-                
-                if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-                    itemMap.put("name", item.getItemMeta().getDisplayName());
-                }
-                
-                itemsList.add(itemMap);
-            }
-        }
-        kitsConfig.set(path + ".items", itemsList);
-        
-        // Save armor
-        if (kit.getHelmet() != null) {
-            kitsConfig.set(path + ".armor.helmet", kit.getHelmet().getType().name());
-        }
-        if (kit.getChestplate() != null) {
-            kitsConfig.set(path + ".armor.chestplate", kit.getChestplate().getType().name());
-        }
-        if (kit.getLeggings() != null) {
-            kitsConfig.set(path + ".armor.leggings", kit.getLeggings().getType().name());
-        }
-        if (kit.getBoots() != null) {
-            kitsConfig.set(path + ".armor.boots", kit.getBoots().getType().name());
-        }
-        
-        // Save effects
-        if (!kit.getEffects().isEmpty()) {
-            List<Map<String, Object>> effectsList = new ArrayList<>();
-            for (PotionEffect effect : kit.getEffects()) {
-                Map<String, Object> effectMap = new HashMap<>();
-                effectMap.put("type", effect.getType().getName());
-                effectMap.put("amplifier", effect.getAmplifier());
-                effectMap.put("duration", effect.getDuration());
-                effectsList.add(effectMap);
-            }
-            kitsConfig.set(path + ".effects", effectsList);
-        }
-        
-        // Save rules
-        if (kit.getRules() != null) {
-            KitRules rules = kit.getRules();
-            kitsConfig.set(path + ".rules.naturalHealthRegen", rules.isNaturalHealthRegen());
-            kitsConfig.set(path + ".rules.blockBreak", rules.isBlockBreak());
-            kitsConfig.set(path + ".rules.blockPlace", rules.isBlockPlace());
-            kitsConfig.set(path + ".rules.damageMultiplier", rules.getDamageMultiplier());
-            kitsConfig.set(path + ".rules.instantTnt", rules.isInstantTnt());
-        }
-    }
-    
-    public Kit createKit(String name, String displayName) {
-        if (kits.containsKey(name)) {
-            return null;
-        }
-        
-        Kit kit = new Kit(name);
-        kit.setDisplayName(displayName);
-        kit.setIcon(new ItemStack(Material.IRON_SWORD));
-        kits.put(name, kit);
-        saveKit(kit);
-        
-        plugin.getLogger().info("Created new kit: " + name);
-        return kit;
-    }
-    
-    public void addKit(Kit kit) {
-        kits.put(kit.getName(), kit);
-        saveKit(kit);
-    }
-    
-    public void saveKit(Kit kit) {
-        saveKitToConfig(kit);
-        try {
-            kitsConfig.save(kitsFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save kit '" + kit.getName() + "': " + e.getMessage());
-        }
-    }
-    
-    public Kit getKit(String name) {
-        return kits.get(name);
-    }
-    
-    public Map<String, Kit> getKits() {
-        return new HashMap<>(kits);
-    }
-    
-    public List<Kit> getAllKits() {
-        return new ArrayList<>(kits.values());
-    }
-    
-    public void deleteKit(String name) {
-        Kit kit = kits.remove(name);
-        if (kit != null) {
-            kitsConfig.set("kits." + name, null);
-            try {
-                kitsConfig.save(kitsFile);
-            } catch (IOException e) {
-                plugin.getLogger().severe("Failed to delete kit '" + name + "': " + e.getMessage());
-            }
-            
-            plugin.getLogger().info("Deleted kit: " + name);
-        }
-    }
-    
+
     public void giveKit(Player player, String kitName) {
         Kit kit = kits.get(kitName);
         if (kit == null) {
-            plugin.getLogger().warning("Tried to give non-existent kit: " + kitName);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cKit not found: " + kitName));
             return;
         }
         
         // Clear inventory
         player.getInventory().clear();
+        player.getInventory().setArmorContents(new ItemStack[4]);
         
         // Give items
-        for (int i = 0; i < 36; i++) {
+        for (int i = 0; i < kit.getItems().length; i++) {
             ItemStack item = kit.getItem(i);
             if (item != null) {
                 player.getInventory().setItem(i, item.clone());
@@ -330,16 +216,138 @@ public class KitManager {
         }
         
         // Apply effects
-        for (PotionEffect effect : kit.getEffects()) {
-            player.addPotionEffect(effect);
+        if (kit.getEffects() != null) {
+            for (PotionEffect effect : kit.getEffects()) {
+                player.addPotionEffect(effect);
+            }
         }
         
-        player.updateInventory();
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aApplied kit: " + kit.getDisplayName()));
     }
-    
+
+    public void saveKit(Kit kit) {
+        if (kit == null) return;
+        
+        ConfigurationSection kitsSection = kitsConfig.getConfigurationSection("kits");
+        if (kitsSection == null) {
+            kitsSection = kitsConfig.createSection("kits");
+        }
+        
+        ConfigurationSection kitSection = kitsSection.createSection(kit.getName());
+        kitSection.set("displayName", kit.getDisplayName());
+        
+        // Save icon
+        if (kit.getIcon() != null) {
+            ConfigurationSection iconSection = kitSection.createSection("icon");
+            iconSection.set("material", kit.getIcon().getType().name());
+            if (kit.getIcon().hasItemMeta()) {
+                ItemMeta meta = kit.getIcon().getItemMeta();
+                if (meta.hasDisplayName()) {
+                    iconSection.set("name", meta.getDisplayName());
+                }
+                if (meta.hasLore()) {
+                    iconSection.set("lore", meta.getLore());
+                }
+            }
+        }
+        
+        // Save items
+        ConfigurationSection itemsSection = kitSection.createSection("items");
+        for (int i = 0; i < kit.getItems().length; i++) {
+            ItemStack item = kit.getItem(i);
+            if (item != null && item.getType() != Material.AIR) {
+                saveItemToConfig(itemsSection.createSection(String.valueOf(i)), item);
+            }
+        }
+        
+        // Save armor
+        ConfigurationSection armorSection = kitSection.createSection("armor");
+        if (kit.getHelmet() != null) {
+            saveItemToConfig(armorSection.createSection("helmet"), kit.getHelmet());
+        }
+        if (kit.getChestplate() != null) {
+            saveItemToConfig(armorSection.createSection("chestplate"), kit.getChestplate());
+        }
+        if (kit.getLeggings() != null) {
+            saveItemToConfig(armorSection.createSection("leggings"), kit.getLeggings());
+        }
+        if (kit.getBoots() != null) {
+            saveItemToConfig(armorSection.createSection("boots"), kit.getBoots());
+        }
+        
+        // Save effects
+        if (kit.getEffects() != null && !kit.getEffects().isEmpty()) {
+            List<String> effectStrings = new java.util.ArrayList<>();
+            for (PotionEffect effect : kit.getEffects()) {
+                effectStrings.add(effect.getType().getName() + ":" + effect.getAmplifier() + ":" + effect.getDuration());
+            }
+            kitSection.set("effects", effectStrings);
+        }
+        
+        // Save rules
+        if (kit.getRules() != null) {
+            ConfigurationSection rulesSection = kitSection.createSection("rules");
+            rulesSection.set("blockBreaking", kit.getRules().isBlockBreaking());
+            rulesSection.set("blockPlacing", kit.getRules().isBlockPlacing());
+            rulesSection.set("naturalHealthRegen", kit.getRules().isNaturalHealthRegen());
+            rulesSection.set("instantTnt", kit.getRules().isInstantTnt());
+            rulesSection.set("damageMultiplier", kit.getRules().getDamageMultiplier());
+        }
+        
+        try {
+            kitsConfig.save(kitsFile);
+            kits.put(kit.getName(), kit);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to save kit " + kit.getName() + ": " + e.getMessage());
+        }
+    }
+
+    private void saveItemToConfig(ConfigurationSection section, ItemStack item) {
+        section.set("material", item.getType().name());
+        section.set("amount", item.getAmount());
+        
+        if (item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta.hasDisplayName()) {
+                section.set("name", meta.getDisplayName());
+            }
+            if (meta.hasLore()) {
+                section.set("lore", meta.getLore());
+            }
+        }
+    }
+
+    public void addKit(Kit kit) {
+        if (kit != null) {
+            kits.put(kit.getName(), kit);
+            saveKit(kit);
+        }
+    }
+
+    public void deleteKit(String kitName) {
+        kits.remove(kitName);
+        
+        ConfigurationSection kitsSection = kitsConfig.getConfigurationSection("kits");
+        if (kitsSection != null && kitsSection.contains(kitName)) {
+            kitsSection.set(kitName, null);
+            try {
+                kitsConfig.save(kitsFile);
+            } catch (IOException e) {
+                plugin.getLogger().severe("Failed to delete kit " + kitName + ": " + e.getMessage());
+            }
+        }
+    }
+
+    public Kit getKit(String name) {
+        return kits.get(name);
+    }
+
+    public Map<String, Kit> getKits() {
+        return new HashMap<>(kits);
+    }
+
     public void reloadKits() {
         kits.clear();
         loadKits();
-        plugin.getLogger().info("Reloaded kits configuration.");
     }
 }

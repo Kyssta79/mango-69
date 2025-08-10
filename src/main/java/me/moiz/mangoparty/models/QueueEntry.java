@@ -1,8 +1,5 @@
 package me.moiz.mangoparty.models;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-
 import java.util.UUID;
 
 public class QueueEntry {
@@ -16,30 +13,27 @@ public class QueueEntry {
         this.joinTime = joinTime;
     }
 
-    public QueueEntry(Player player, String mode, String kitName) {
-        this.playerUUID = player.getUniqueId();
-        this.kitName = kitName;
-        this.joinTime = System.currentTimeMillis();
-    }
-
     public UUID getPlayerUUID() {
         return playerUUID;
     }
 
-    public Player getPlayer() {
-        return Bukkit.getPlayer(playerUUID);
+    public void setPlayerUUID(UUID playerUUID) {
+        this.playerUUID = playerUUID;
     }
 
     public String getKitName() {
         return kitName;
     }
 
+    public void setKitName(String kitName) {
+        this.kitName = kitName;
+    }
+
     public long getJoinTime() {
         return joinTime;
     }
 
-    public String getMode() {
-        // This method is used by some parts of the code
-        return "1v1"; // Default mode, can be enhanced later
+    public void setJoinTime(long joinTime) {
+        this.joinTime = joinTime;
     }
 }
