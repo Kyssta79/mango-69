@@ -1,77 +1,76 @@
 package me.moiz.mangoparty.models;
 
 public class KitRules {
-    private boolean naturalHealthRegen;
-    private boolean blockBreak;
-    private boolean blockPlace;
-    private double damageMultiplier;
-    private boolean instantTnt;
-    
+    private boolean blockBreaking;
+    private boolean blockPlacing;
+    private boolean pvp;
+    private boolean itemDropping;
+    private boolean itemPickup;
+
     public KitRules() {
-        this.naturalHealthRegen = true;
-        this.blockBreak = false;
-        this.blockPlace = false;
-        this.damageMultiplier = 1.0;
-        this.instantTnt = false;
+        this.blockBreaking = false;
+        this.blockPlacing = false;
+        this.pvp = true;
+        this.itemDropping = true;
+        this.itemPickup = true;
     }
-    
-    public boolean isNaturalHealthRegen() {
-        return naturalHealthRegen;
-    }
-    
-    public void setNaturalHealthRegen(boolean naturalHealthRegen) {
-        this.naturalHealthRegen = naturalHealthRegen;
-    }
-    
-    public boolean isBlockBreak() {
-        return blockBreak;
-    }
-    
-    public void setBlockBreak(boolean blockBreak) {
-        this.blockBreak = blockBreak;
-    }
-    
-    public boolean isBlockPlace() {
-        return blockPlace;
-    }
-    
-    public void setBlockPlace(boolean blockPlace) {
-        this.blockPlace = blockPlace;
-    }
-    
-    // Block Breaking
+
+    // Block breaking methods (both naming conventions for compatibility)
     public boolean isBlockBreaking() {
-        return blockBreak;
+        return blockBreaking;
     }
-    
+
+    public boolean canBreakBlocks() {
+        return blockBreaking;
+    }
+
     public void setBlockBreaking(boolean blockBreaking) {
-        this.blockBreak = blockBreaking;
+        this.blockBreaking = blockBreaking;
     }
-    
-    // Block Placing
+
+    public void setCanBreakBlocks(boolean canBreakBlocks) {
+        this.blockBreaking = canBreakBlocks;
+    }
+
+    // Block placing methods (both naming conventions for compatibility)
     public boolean isBlockPlacing() {
-        return blockPlace;
+        return blockPlacing;
     }
-    
+
+    public boolean canPlaceBlocks() {
+        return blockPlacing;
+    }
+
     public void setBlockPlacing(boolean blockPlacing) {
-        this.blockPlace = blockPlacing;
+        this.blockPlacing = blockPlacing;
     }
-    
-    // Damage Multiplier
-    public double getDamageMultiplier() {
-        return damageMultiplier;
+
+    public void setCanPlaceBlocks(boolean canPlaceBlocks) {
+        this.blockPlacing = canPlaceBlocks;
     }
-    
-    public void setDamageMultiplier(double damageMultiplier) {
-        this.damageMultiplier = damageMultiplier;
+
+    // Other getters and setters
+    public boolean isPvp() {
+        return pvp;
     }
-    
-    // Instant TNT
-    public boolean isInstantTnt() {
-        return instantTnt;
+
+    public void setPvp(boolean pvp) {
+        this.pvp = pvp;
     }
-    
-    public void setInstantTnt(boolean instantTnt) {
-        this.instantTnt = instantTnt;
+
+    public boolean isItemDropping() {
+        return itemDropping;
+    }
+
+    public void setItemDropping(boolean itemDropping) {
+        this.itemDropping = itemDropping;
+    }
+
+    public boolean isItemPickup() {
+        return itemPickup;
+    }
+
+    public void setItemPickup(boolean itemPickup) {
+        this.itemPickup = itemPickup;
     }
 }

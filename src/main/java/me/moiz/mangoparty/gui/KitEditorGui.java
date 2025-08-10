@@ -8,73 +8,55 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class KitEditorGui implements Listener {
     private MangoParty plugin;
-    private Map<UUID, String> editingKit = new HashMap<>();
-    private Map<UUID, String> awaitingInput = new HashMap<>();
-    
+
     public KitEditorGui(MangoParty plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
-    
-    // Helper method to translate color codes
-    private String translateColors(String text) {
-        if (text == null) return null;
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
-    
-    // Helper method to translate color codes in a list
-    private List<String> translateColors(List<String> list) {
-        if (list == null) return null;
-        List<String> translated = new ArrayList<>();
-        for (String line : list) {
-            translated.add(translateColors(line));
-        }
-        return translated;
-    }
-    
+
     public void openKitListGui(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 54, translateColors("&6Kit Manager"));
+        Inventory gui = Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('&', "&6Kit Manager"));
         
-        // Create New Kit button
-        ItemStack createKit = new ItemStack(Material.EMERALD);
-        ItemMeta createMeta = createKit.getItemMeta();
-        createMeta.setDisplayName(translateColors("&aCreate New Kit"));
+        // Add create new kit button
+        ItemStack createButton = new ItemStack(Material.EMERALD);
+        ItemMeta createMeta = createButton.getItemMeta();
+        createMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a&lCreate New Kit"));
         List<String> createLore = new ArrayList<>();
-        createLore.add(translateColors("&7Click to create a new kit"));
-        createLore.add(translateColors("&7from your current inventory"));
+        createLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to create a new kit"));
         createMeta.setLore(createLore);
-        createKit.setItemMeta(createMeta);
-        gui.setItem(49, createKit);
+        createButton.setItemMeta(createMeta);
+        gui.setItem(0, createButton);
         
         // Add existing kits
-        int slot = 0;
-        for (Kit kit : plugin.getKitManager().getKits().values()) {
-            if (slot >= 45) break; // Leave space for create button
+        int slot = 9; // Start from second row
+        Map<String, Kit> kits = plugin.getKitManager().getKits();
+        for (Map.Entry<String, Kit> entry : kits.entrySet()) {
+            if (slot >= 54) break;
+            
+            String kitName = entry.getKey();
+            Kit kit = entry.getValue();
             
             ItemStack kitItem = kit.getIcon() != null ? kit.getIcon().clone() : new ItemStack(Material.IRON_SWORD);
             ItemMeta meta = kitItem.getItemMeta();
-            meta.setDisplayName(translateColors("&e" + kit.getDisplayName()));
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&e" + kitName));
             
             List<String> lore = new ArrayList<>();
-            lore.add(translateColors("&7Click to edit this kit"));
             lore.add("");
-            lore.add(translateColors("&7Rules:"));
-            KitRules rules = kit.getRules();
-            lore.add(translateColors("&8• Health Regen: " + (rules.isNaturalHealthRegen() ? "&aEnabled" : "&cDisabled")));
-            lore.add(translateColors("&8• Block Breaking: " + (rules.isBlockBreaking() ? "&aEnabled" : "&cDisabled")));
-            lore.add(translateColors("&8• Block Placing: " + (rules.isBlockPlacing() ? "&aEnabled" : "&cDisabled")));
-            lore.add(translateColors("&8• Damage Multiplier: &f" + rules.getDamageMultiplier()));
+            lore.add(ChatColor.translateAlternateColorCodes('&', "&aLeft-click to edit"));
+            lore.add(ChatColor.translateAlternateColorCodes('&', "&cRight-click to delete"));
             
             meta.setLore(lore);
             kitItem.setItemMeta(meta);
@@ -84,133 +66,23 @@ public class KitEditorGui implements Listener {
         
         player.openInventory(gui);
     }
-    
+
     public void openKitEditorGui(Player player, String kitName) {
         Kit kit = plugin.getKitManager().getKit(kitName);
         if (kit == null) {
-            player.sendMessage(translateColors("&cKit not found!"));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cKit not found!"));
             return;
         }
         
-        editingKit.put(player.getUniqueId(), kitName);
-        openKitEditor(player, kit);
+        KitEditorInstance instance = new KitEditorInstance(plugin, player, kit);
+        instance.open();
     }
-    
-    private void openKitEditor(Player player, Kit kit) {
-        Inventory gui = Bukkit.createInventory(null, 27, translateColors("&6Editing: " + kit.getDisplayName()));
-        
-        // Kit Icon button
-        ItemStack iconItem = new ItemStack(Material.ITEM_FRAME);
-        ItemMeta iconMeta = iconItem.getItemMeta();
-        iconMeta.setDisplayName(translateColors("&eKit Icon"));
-        List<String> iconLore = new ArrayList<>();
-        iconLore.add(translateColors("&7Hold an item in your main hand"));
-        iconLore.add(translateColors("&7and click to set as kit icon"));
-        iconMeta.setLore(iconLore);
-        iconItem.setItemMeta(iconMeta);
-        gui.setItem(10, iconItem);
-        
-        // Kit Rules button
-        ItemStack rulesItem = new ItemStack(Material.BOOK);
-        ItemMeta rulesMeta = rulesItem.getItemMeta();
-        rulesMeta.setDisplayName(translateColors("&bKit Rules"));
-        List<String> rulesLore = new ArrayList<>();
-        rulesLore.add(translateColors("&7Click to edit kit rules"));
-        rulesLore.add(translateColors("&7such as health regen, blocks, etc."));
-        rulesMeta.setLore(rulesLore);
-        rulesItem.setItemMeta(rulesMeta);
-        gui.setItem(12, rulesItem);
-        
-        // Save button
-        ItemStack saveItem = new ItemStack(Material.EMERALD_BLOCK);
-        ItemMeta saveMeta = saveItem.getItemMeta();
-        saveMeta.setDisplayName(translateColors("&aSave Kit"));
-        List<String> saveLore = new ArrayList<>();
-        saveLore.add(translateColors("&7Click to save all changes"));
-        saveMeta.setLore(saveLore);
-        saveItem.setItemMeta(saveMeta);
-        gui.setItem(14, saveItem);
-        
-        // Back button
-        ItemStack backItem = new ItemStack(Material.ARROW);
-        ItemMeta backMeta = backItem.getItemMeta();
-        backMeta.setDisplayName(translateColors("&cBack"));
-        List<String> backLore = new ArrayList<>();
-        backLore.add(translateColors("&7Return to kit list"));
-        backMeta.setLore(backLore);
-        backItem.setItemMeta(backMeta);
-        gui.setItem(16, backItem);
-        
-        player.openInventory(gui);
+
+    public void openCreateKitGui(Player player) {
+        KitEditorInstance instance = new KitEditorInstance(plugin, player, null);
+        instance.open();
     }
-    
-    public void openKitRulesGui(Player player, String kitName) {
-        Kit kit = plugin.getKitManager().getKit(kitName);
-        if (kit == null) {
-            player.sendMessage(translateColors("&cKit not found!"));
-            return;
-        }
-        
-        Inventory gui = Bukkit.createInventory(null, 27, translateColors("&6Rules: " + kit.getDisplayName()));
-        KitRules rules = kit.getRules();
-        
-        // Health Regen toggle
-        ItemStack healthRegen = new ItemStack(rules.isNaturalHealthRegen() ? Material.GOLDEN_APPLE : Material.ROTTEN_FLESH);
-        ItemMeta healthMeta = healthRegen.getItemMeta();
-        healthMeta.setDisplayName(translateColors("&cNatural Health Regeneration"));
-        List<String> healthLore = new ArrayList<>();
-        healthLore.add(translateColors("&7Status: " + (rules.isNaturalHealthRegen() ? "&aEnabled" : "&cDisabled")));
-        healthLore.add(translateColors("&7Click to toggle"));
-        healthMeta.setLore(healthLore);
-        healthRegen.setItemMeta(healthMeta);
-        gui.setItem(10, healthRegen);
-        
-        // Block Breaking toggle
-        ItemStack blockBreaking = new ItemStack(rules.isBlockBreaking() ? Material.DIAMOND_PICKAXE : Material.BARRIER);
-        ItemMeta breakMeta = blockBreaking.getItemMeta();
-        breakMeta.setDisplayName(translateColors("&6Block Breaking"));
-        List<String> breakLore = new ArrayList<>();
-        breakLore.add(translateColors("&7Status: " + (rules.isBlockBreaking() ? "&aEnabled" : "&cDisabled")));
-        breakLore.add(translateColors("&7Click to toggle"));
-        breakMeta.setLore(breakLore);
-        blockBreaking.setItemMeta(breakMeta);
-        gui.setItem(12, blockBreaking);
-        
-        // Block Placing toggle
-        ItemStack blockPlacing = new ItemStack(rules.isBlockPlacing() ? Material.GRASS_BLOCK : Material.BARRIER);
-        ItemMeta placeMeta = blockPlacing.getItemMeta();
-        placeMeta.setDisplayName(translateColors("&aBlock Placing"));
-        List<String> placeLore = new ArrayList<>();
-        placeLore.add(translateColors("&7Status: " + (rules.isBlockPlacing() ? "&aEnabled" : "&cDisabled")));
-        placeLore.add(translateColors("&7Click to toggle"));
-        placeMeta.setLore(placeLore);
-        blockPlacing.setItemMeta(placeMeta);
-        gui.setItem(14, blockPlacing);
-        
-        // Damage Multiplier
-        ItemStack damageMultiplier = new ItemStack(Material.IRON_SWORD);
-        ItemMeta damageMeta = damageMultiplier.getItemMeta();
-        damageMeta.setDisplayName(translateColors("&4Damage Multiplier"));
-        List<String> damageLore = new ArrayList<>();
-        damageLore.add(translateColors("&7Current: &f" + rules.getDamageMultiplier()));
-        damageLore.add(translateColors("&7Click to change"));
-        damageMeta.setLore(damageLore);
-        damageMultiplier.setItemMeta(damageMeta);
-        gui.setItem(16, damageMultiplier);
-        
-        // Back button
-        ItemStack backItem = new ItemStack(Material.ARROW);
-        ItemMeta backMeta = backItem.getItemMeta();
-        backMeta.setDisplayName(translateColors("&cBack"));
-        List<String> backLore = new ArrayList<>();
-        backLore.add(translateColors("&7Return to kit editor"));
-        backMeta.setLore(backLore);
-        backItem.setItemMeta(backMeta);
-        gui.setItem(22, backItem);
-        
-        player.openInventory(gui);
-    }
-    
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -218,15 +90,9 @@ public class KitEditorGui implements Listener {
         Player player = (Player) event.getWhoClicked();
         String title = event.getView().getTitle();
         
-        if (title.equals(translateColors("&6Kit Manager"))) {
+        if (title.equals(ChatColor.translateAlternateColorCodes('&', "&6Kit Manager"))) {
             event.setCancelled(true);
             handleKitListClick(player, event);
-        } else if (title.startsWith(translateColors("&6Editing:"))) {
-            event.setCancelled(true);
-            handleKitEditorClick(player, event);
-        } else if (title.startsWith(translateColors("&6Rules:"))) {
-            event.setCancelled(true);
-            handleKitRulesClick(player, event);
         }
     }
     
@@ -236,178 +102,289 @@ public class KitEditorGui implements Listener {
         
         if (clicked.getType() == Material.EMERALD) {
             // Create new kit
-            createKitFromInventory(player);
-        } else {
-            // Edit existing kit
-            ItemMeta meta = clicked.getItemMeta();
-            if (meta != null && meta.getDisplayName() != null) {
-                String kitName = ChatColor.stripColor(meta.getDisplayName());
-                openKitEditorGui(player, kitName);
-            }
+            openCreateKitGui(player);
+            return;
+        }
+        
+        String kitName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+        
+        if (event.isLeftClick()) {
+            // Edit kit
+            openKitEditorGui(player, kitName);
+        } else if (event.isRightClick()) {
+            // Delete kit
+            plugin.getKitManager().deleteKit(kitName);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cDeleted kit: " + kitName));
+            openKitListGui(player); // Refresh the GUI
         }
     }
-    
-    private void handleKitEditorClick(Player player, InventoryClickEvent event) {
-        ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || clicked.getType() == Material.AIR) return;
-        
-        String kitName = editingKit.get(player.getUniqueId());
-        if (kitName == null) return;
-        
-        if (clicked.getType() == Material.ITEM_FRAME) {
-            // Set kit icon
-            ItemStack mainHand = player.getInventory().getItemInMainHand();
-            if (mainHand != null && mainHand.getType() != Material.AIR) {
-                Kit kit = plugin.getKitManager().getKit(kitName);
-                if (kit != null) {
-                    kit.setIcon(mainHand.clone());
-                    plugin.getKitManager().saveKit(kit);
-                    player.sendMessage(translateColors("&aKit icon updated!"));
-                    openKitEditor(player, kit);
-                }
-            } else {
-                player.sendMessage(translateColors("&cHold an item in your main hand first!"));
-            }
-        } else if (clicked.getType() == Material.BOOK) {
-            // Edit kit rules
-            openKitRulesGui(player, kitName);
-        } else if (clicked.getType() == Material.EMERALD_BLOCK) {
-            // Save kit
-            Kit kit = plugin.getKitManager().getKit(kitName);
-            if (kit != null) {
-                plugin.getKitManager().saveKit(kit);
-                player.sendMessage(translateColors("&aKit saved successfully!"));
-            }
-        } else if (clicked.getType() == Material.ARROW) {
-            // Back to kit list
-            editingKit.remove(player.getUniqueId());
-            openKitListGui(player);
-        }
-    }
-    
-    private void handleKitRulesClick(Player player, InventoryClickEvent event) {
-        ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || clicked.getType() == Material.AIR) return;
-        
-        String kitName = editingKit.get(player.getUniqueId());
-        if (kitName == null) return;
-        
-        Kit kit = plugin.getKitManager().getKit(kitName);
-        if (kit == null) return;
-        
-        KitRules rules = kit.getRules();
-        
-        if (clicked.getType() == Material.GOLDEN_APPLE || clicked.getType() == Material.ROTTEN_FLESH) {
-            // Toggle health regen
-            rules.setNaturalHealthRegen(!rules.isNaturalHealthRegen());
-            plugin.getKitManager().saveKit(kit);
-            openKitRulesGui(player, kitName);
-        } else if (clicked.getType() == Material.DIAMOND_PICKAXE || clicked.getType() == Material.BARRIER) {
-            // Toggle block breaking
-            if (event.getSlot() == 12) {
-                rules.setBlockBreaking(!rules.isBlockBreaking());
-                plugin.getKitManager().saveKit(kit);
-                openKitRulesGui(player, kitName);
-            } else if (event.getSlot() == 14) {
-                // Toggle block placing
-                rules.setBlockPlacing(!rules.isBlockPlacing());
-                plugin.getKitManager().saveKit(kit);
-                openKitRulesGui(player, kitName);
-            }
-        } else if (clicked.getType() == Material.GRASS_BLOCK) {
-            // Toggle block placing
-            rules.setBlockPlacing(!rules.isBlockPlacing());
-            plugin.getKitManager().saveKit(kit);
-            openKitRulesGui(player, kitName);
-        } else if (clicked.getType() == Material.IRON_SWORD) {
-            // Change damage multiplier
-            player.closeInventory();
-            player.sendMessage(translateColors("&eEnter new damage multiplier (e.g., 1.0, 1.5, 2.0):"));
-            awaitingInput.put(player.getUniqueId(), "damage_multiplier:" + kitName);
-        } else if (clicked.getType() == Material.ARROW) {
-            // Back to kit editor
-            Kit editKit = plugin.getKitManager().getKit(kitName);
-            if (editKit != null) {
-                openKitEditor(player, editKit);
-            }
-        }
-    }
-    
-    private void createKitFromInventory(Player player) {
-        player.closeInventory();
-        player.sendMessage(translateColors("&eEnter a name for the new kit:"));
-        awaitingInput.put(player.getUniqueId(), "create_kit");
-    }
-    
-    @EventHandler
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        String input = awaitingInput.get(player.getUniqueId());
-        
-        if (input != null) {
-            event.setCancelled(true);
-            awaitingInput.remove(player.getUniqueId());
-            
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (input.equals("create_kit")) {
-                    String kitName = event.getMessage().trim();
-                    if (plugin.getKitManager().getKit(kitName) != null) {
-                        player.sendMessage(translateColors("&cA kit with that name already exists!"));
-                        return;
-                    }
-                    
-                    // Create kit from player's inventory
-                    ItemStack[] armor = player.getInventory().getArmorContents();
-                    ItemStack[] items = player.getInventory().getContents();
-                    
-                    Kit newKit = new Kit(kitName, kitName, items, armor);
-                    
-                    // Set icon to first non-null item or default sword
-                    ItemStack icon = null;
-                    for (ItemStack item : items) {
-                        if (item != null && item.getType() != Material.AIR) {
-                            icon = item.clone();
-                            icon.setAmount(1);
-                            break;
-                        }
-                    }
-                    if (icon == null) {
-                        icon = new ItemStack(Material.IRON_SWORD);
-                    }
-                    newKit.setIcon(icon);
-                    
-                    plugin.getKitManager().addKit(newKit);
-                    plugin.getKitManager().saveKit(newKit);
-                    
-                    player.sendMessage(translateColors("&aKit '" + kitName + "' created successfully!"));
-                    openKitListGui(player);
-                    
-                } else if (input.startsWith("damage_multiplier:")) {
-                    String kitName = input.substring("damage_multiplier:".length());
-                    try {
-                        double multiplier = Double.parseDouble(event.getMessage().trim());
-                        if (multiplier <= 0) {
-                            player.sendMessage(translateColors("&cDamage multiplier must be greater than 0!"));
-                            return;
-                        }
-                        
-                        Kit kit = plugin.getKitManager().getKit(kitName);
-                        if (kit != null) {
-                            kit.getRules().setDamageMultiplier(multiplier);
-                            plugin.getKitManager().saveKit(kit);
-                            player.sendMessage(translateColors("&aDamage multiplier set to " + multiplier));
-                            openKitRulesGui(player, kitName);
-                        }
-                    } catch (NumberFormatException e) {
-                        player.sendMessage(translateColors("&cInvalid number! Please enter a valid decimal number."));
-                    }
-                }
-            });
-        }
-    }
-    
-    // Add this method for compatibility with MangoCommand
+
     public void reloadConfigs() {
         plugin.getLogger().info("Kit editor configs reloaded.");
+    }
+
+    // Inner class for individual kit editor instances
+    private static class KitEditorInstance implements Listener {
+        private MangoParty plugin;
+        private Player player;
+        private Kit kit;
+        private Inventory inventory;
+        private boolean isNewKit;
+        private String tempKitName;
+
+        public KitEditorInstance(MangoParty plugin, Player player, Kit kit) {
+            this.plugin = plugin;
+            this.player = player;
+            this.kit = kit;
+            this.isNewKit = (kit == null);
+            this.tempKitName = isNewKit ? "NewKit" : kit.getName();
+            
+            createInventory();
+            plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        }
+
+        private void createInventory() {
+            String title = ChatColor.translateAlternateColorCodes('&', "&6Kit Editor: " + tempKitName);
+            inventory = Bukkit.createInventory(null, 54, title);
+            updateInventory();
+        }
+
+        private void updateInventory() {
+            inventory.clear();
+            
+            // Kit Icon button
+            ItemStack iconItem = new ItemStack(Material.ITEM_FRAME);
+            ItemMeta iconMeta = iconItem.getItemMeta();
+            iconMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&eKit Icon"));
+            List<String> iconLore = new ArrayList<>();
+            iconLore.add(ChatColor.translateAlternateColorCodes('&', "&7Hold an item in your main hand"));
+            iconLore.add(ChatColor.translateAlternateColorCodes('&', "&7and click to set as kit icon"));
+            if (kit != null && kit.getIcon() != null) {
+                iconLore.add("");
+                iconLore.add(ChatColor.translateAlternateColorCodes('&', "&aCurrent icon set"));
+            }
+            iconMeta.setLore(iconLore);
+            iconItem.setItemMeta(iconMeta);
+            inventory.setItem(10, iconItem);
+
+            // Kit Rules button
+            ItemStack rulesItem = new ItemStack(Material.BOOK);
+            ItemMeta rulesMeta = rulesItem.getItemMeta();
+            rulesMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&bKit Rules"));
+            List<String> rulesLore = new ArrayList<>();
+            rulesLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to configure kit rules"));
+            rulesMeta.setLore(rulesLore);
+            rulesItem.setItemMeta(rulesMeta);
+            inventory.setItem(12, rulesItem);
+
+            // Save Kit button
+            ItemStack saveItem = new ItemStack(Material.EMERALD);
+            ItemMeta saveMeta = saveItem.getItemMeta();
+            saveMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&aSave Kit"));
+            List<String> saveLore = new ArrayList<>();
+            saveLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to save kit from"));
+            saveLore.add(ChatColor.translateAlternateColorCodes('&', "&7your current inventory"));
+            saveMeta.setLore(saveLore);
+            saveItem.setItemMeta(saveMeta);
+            inventory.setItem(14, saveItem);
+
+            // Back button
+            ItemStack backItem = new ItemStack(Material.ARROW);
+            ItemMeta backMeta = backItem.getItemMeta();
+            backMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&cBack"));
+            backItem.setItemMeta(backMeta);
+            inventory.setItem(49, backItem);
+        }
+
+        public void open() {
+            player.openInventory(inventory);
+        }
+
+        @EventHandler
+        public void onInventoryClick(InventoryClickEvent event) {
+            if (!event.getInventory().equals(inventory)) return;
+            if (!(event.getWhoClicked() instanceof Player)) return;
+            
+            event.setCancelled(true);
+            Player clicker = (Player) event.getWhoClicked();
+            
+            if (!clicker.equals(player)) return;
+            
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked == null || clicked.getType() == Material.AIR) return;
+            
+            String displayName = clicked.getItemMeta().getDisplayName();
+            
+            if (displayName.contains("Kit Icon")) {
+                handleKitIconClick();
+            } else if (displayName.contains("Kit Rules")) {
+                handleKitRulesClick();
+            } else if (displayName.contains("Save Kit")) {
+                handleSaveKitClick();
+            } else if (displayName.contains("Back")) {
+                cleanup();
+                plugin.getKitEditorGui().openKitListGui(player);
+            }
+        }
+
+        private void handleKitIconClick() {
+            ItemStack heldItem = player.getInventory().getItemInMainHand();
+            if (heldItem == null || heldItem.getType() == Material.AIR) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cYou must hold an item in your main hand!"));
+                return;
+            }
+            
+            if (kit == null) {
+                // Create temporary kit for new kit
+                kit = new Kit(tempKitName);
+            }
+            
+            kit.setIcon(heldItem.clone());
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aKit icon set to: " + heldItem.getType().name()));
+            updateInventory();
+        }
+
+        private void handleKitRulesClick() {
+            if (kit == null) {
+                kit = new Kit(tempKitName);
+            }
+            
+            // Open kit rules GUI
+            openKitRulesGui();
+        }
+
+        private void handleSaveKitClick() {
+            // Get player's current inventory
+            ItemStack[] contents = player.getInventory().getContents();
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            
+            // Filter out null items
+            List<ItemStack> itemsList = new ArrayList<>();
+            for (ItemStack item : contents) {
+                if (item != null && item.getType() != Material.AIR) {
+                    itemsList.add(item.clone());
+                }
+            }
+            
+            List<ItemStack> armorList = new ArrayList<>();
+            for (ItemStack item : armor) {
+                if (item != null && item.getType() != Material.AIR) {
+                    armorList.add(item.clone());
+                }
+            }
+            
+            if (isNewKit) {
+                // Create new kit
+                Kit newKit = new Kit(tempKitName);
+                newKit.setItems(itemsList.toArray(new ItemStack[0]));
+                newKit.setArmor(armorList.toArray(new ItemStack[0]));
+                
+                if (kit != null && kit.getIcon() != null) {
+                    newKit.setIcon(kit.getIcon());
+                }
+                if (kit != null && kit.getRules() != null) {
+                    newKit.setRules(kit.getRules());
+                }
+                
+                plugin.getKitManager().addKit(newKit);
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aCreated new kit: " + tempKitName));
+            } else {
+                // Update existing kit
+                kit.setItems(itemsList.toArray(new ItemStack[0]));
+                kit.setArmor(armorList.toArray(new ItemStack[0]));
+                plugin.getKitManager().saveKit(kit);
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aUpdated kit: " + kit.getName()));
+            }
+            
+            cleanup();
+            plugin.getKitEditorGui().openKitListGui(player);
+        }
+
+        private void openKitRulesGui() {
+            Inventory rulesGui = Bukkit.createInventory(null, 27, ChatColor.translateAlternateColorCodes('&', "&6Kit Rules: " + tempKitName));
+            
+            KitRules rules = kit.getRules();
+            if (rules == null) {
+                rules = new KitRules();
+                kit.setRules(rules);
+            }
+            
+            // Block Breaking toggle
+            ItemStack breakingItem = new ItemStack(rules.isBlockBreaking() ? Material.LIME_DYE : Material.GRAY_DYE);
+            ItemMeta breakingMeta = breakingItem.getItemMeta();
+            breakingMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&eBlock Breaking"));
+            List<String> breakingLore = new ArrayList<>();
+            breakingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (rules.isBlockBreaking() ? "&aEnabled" : "&cDisabled")));
+            breakingLore.add("");
+            breakingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to toggle"));
+            breakingMeta.setLore(breakingLore);
+            breakingItem.setItemMeta(breakingMeta);
+            rulesGui.setItem(10, breakingItem);
+            
+            // Block Placing toggle
+            ItemStack placingItem = new ItemStack(rules.isBlockPlacing() ? Material.LIME_DYE : Material.GRAY_DYE);
+            ItemMeta placingMeta = placingItem.getItemMeta();
+            placingMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&eBlock Placing"));
+            List<String> placingLore = new ArrayList<>();
+            placingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Status: " + (rules.isBlockPlacing() ? "&aEnabled" : "&cDisabled")));
+            placingLore.add("");
+            placingLore.add(ChatColor.translateAlternateColorCodes('&', "&7Click to toggle"));
+            placingMeta.setLore(placingLore);
+            placingItem.setItemMeta(placingMeta);
+            rulesGui.setItem(12, placingItem);
+            
+            // Back button
+            ItemStack backItem = new ItemStack(Material.ARROW);
+            ItemMeta backMeta = backItem.getItemMeta();
+            backMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&cBack to Kit Editor"));
+            backItem.setItemMeta(backMeta);
+            rulesGui.setItem(22, backItem);
+            
+            // Register temporary listener for rules GUI
+            Listener rulesListener = new Listener() {
+                @EventHandler
+                public void onRulesClick(InventoryClickEvent e) {
+                    if (!e.getInventory().equals(rulesGui)) return;
+                    if (!(e.getWhoClicked() instanceof Player)) return;
+                    
+                    e.setCancelled(true);
+                    Player clicker = (Player) e.getWhoClicked();
+                    
+                    if (!clicker.equals(player)) return;
+                    
+                    ItemStack clicked = e.getCurrentItem();
+                    if (clicked == null || clicked.getType() == Material.AIR) return;
+                    
+                    String displayName = clicked.getItemMeta().getDisplayName();
+                    
+                    if (displayName.contains("Block Breaking")) {
+                        rules.setBlockBreaking(!rules.isBlockBreaking());
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock breaking " + (rules.isBlockBreaking() ? "&aenabled" : "&cdisabled")));
+                        openKitRulesGui(); // Refresh
+                    } else if (displayName.contains("Block Placing")) {
+                        rules.setBlockPlacing(!rules.isBlockPlacing());
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eBlock placing " + (rules.isBlockPlacing() ? "&aenabled" : "&cdisabled")));
+                        openKitRulesGui(); // Refresh
+                    } else if (displayName.contains("Back to Kit Editor")) {
+                        HandlerList.unregisterAll(this);
+                        updateInventory();
+                        open();
+                    }
+                }
+            };
+            
+            plugin.getServer().getPluginManager().registerEvents(rulesListener, plugin);
+            
+            // Auto-unregister after 5 minutes
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                HandlerList.unregisterAll(rulesListener);
+            }, 6000L);
+            
+            player.openInventory(rulesGui);
+        }
+
+        public void cleanup() {
+            HandlerList.unregisterAll(this);
+        }
     }
 }

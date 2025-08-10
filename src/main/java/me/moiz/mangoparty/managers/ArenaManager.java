@@ -232,17 +232,11 @@ public class ArenaManager {
                 plugin.getLogger().severe("Failed to delete arena '" + name + "': " + e.getMessage());
             }
             
-            // Delete both .schem and .schematic files if they exist
+            // Delete schematic file if it exists
             File schemFile = new File(schematicsDir, name + ".schem");
-            File schematicFile = new File(schematicsDir, name + ".schematic");
-            
             if (schemFile.exists()) {
                 schemFile.delete();
                 debugLog("Deleted .schem file for arena: " + name);
-            }
-            if (schematicFile.exists()) {
-                schematicFile.delete();
-                debugLog("Deleted .schematic file for arena: " + name);
             }
             
             plugin.getLogger().info("Deleted arena: " + name);
@@ -320,35 +314,24 @@ public class ArenaManager {
                 Operations.complete(copy);
                 debugLog("Copy operation completed successfully");
             
-                // Try to save as .schem format first
+                // Save as .schem format (Sponge Schematic)
                 File schemFile = new File(schematicsDir, arena.getName() + ".schem");
-            
                 debugLog("Attempting to save to: " + schemFile.getPath());
             
-                // Try multiple format approaches
-                ClipboardFormat format = null;
-                
-                // Try to get the format by file first
-                format = ClipboardFormats.findByFile(schemFile);
-                
+                // Get the Sponge schematic format specifically
+                ClipboardFormat format = ClipboardFormats.findByAlias("sponge");
                 if (format == null) {
-                    // Try to get all available formats and find sponge
-                    for (ClipboardFormat availableFormat : ClipboardFormats.getAll()) {
-                        if (availableFormat.getName().toLowerCase().contains("sponge") || 
-                            availableFormat.getName().toLowerCase().contains("schem")) {
-                            format = availableFormat;
-                            break;
-                        }
-                    }
+                    // Try alternative ways to get the format
+                    format = ClipboardFormats.findByExtension("schem");
                 }
                 
                 if (format == null) {
-                    // Fallback to legacy schematic format
-                    File legacyFile = new File(schematicsDir, arena.getName() + ".schematic");
-                    format = ClipboardFormats.findByFile(legacyFile);
-                    if (format != null) {
-                        schemFile = legacyFile;
-                        debugLog("Falling back to legacy .schematic format");
+                    // Last resort - iterate through all formats to find sponge
+                    for (ClipboardFormat availableFormat : ClipboardFormats.getAll()) {
+                        if (availableFormat.getName().toLowerCase().contains("sponge")) {
+                            format = availableFormat;
+                            break;
+                        }
                     }
                 }
                 
@@ -358,10 +341,13 @@ public class ArenaManager {
                          ClipboardWriter writer = format.getWriter(fos)) {
                         writer.write(clipboard);
                         fos.flush();
-                        debugLog("Successfully wrote schematic file, size: " + schemFile.length() + " bytes");
+                        debugLog("Successfully wrote .schem file, size: " + schemFile.length() + " bytes");
                     }
                 } else {
-                    plugin.getLogger().severe("Could not find any suitable schematic format!");
+                    plugin.getLogger().severe("Could not find Sponge schematic format! Available formats:");
+                    for (ClipboardFormat availableFormat : ClipboardFormats.getAll()) {
+                        plugin.getLogger().info("  - " + availableFormat.getName() + " (" + availableFormat.getPrimaryFileExtension() + ")");
+                    }
                     return false;
                 }
             }
@@ -377,37 +363,26 @@ public class ArenaManager {
     }
 
     public boolean pasteSchematic(String arenaName, Location location) {
-        // Check for both .schem and .schematic files
         File schemFile = new File(schematicsDir, arenaName + ".schem");
-        File schematicFile = new File(schematicsDir, arenaName + ".schematic");
         
-        File fileToUse = null;
-        if (schemFile.exists() && schemFile.length() > 0) {
-            fileToUse = schemFile;
-            debugLog("Using .schem file: " + schemFile.getPath() + " (size: " + schemFile.length() + " bytes)");
-        } else if (schematicFile.exists() && schematicFile.length() > 0) {
-            fileToUse = schematicFile;
-            debugLog("Using .schematic file: " + schematicFile.getPath() + " (size: " + schematicFile.length() + " bytes)");
-        } else {
+        if (!schemFile.exists() || schemFile.length() == 0) {
             plugin.getLogger().warning("No valid schematic file found for arena: " + arenaName);
-            debugLog("Checked files:");
-            debugLog("  " + schemFile.getPath() + " - exists: " + schemFile.exists() + ", size: " + (schemFile.exists() ? schemFile.length() : "N/A"));
-            debugLog("  " + schematicFile.getPath() + " - exists: " + schematicFile.exists() + ", size: " + (schematicFile.exists() ? schematicFile.length() : "N/A"));
+            debugLog("Checked file: " + schemFile.getPath() + " - exists: " + schemFile.exists() + ", size: " + (schemFile.exists() ? schemFile.length() : "N/A"));
             return false;
         }
 
         try {
-            debugLog("Attempting to paste schematic: " + fileToUse.getName());
-            ClipboardFormat format = ClipboardFormats.findByFile(fileToUse);
+            debugLog("Attempting to paste schematic: " + schemFile.getName());
+            ClipboardFormat format = ClipboardFormats.findByFile(schemFile);
             if (format == null) {
-                plugin.getLogger().warning("Could not find clipboard format for: " + fileToUse.getName());
+                plugin.getLogger().warning("Could not find clipboard format for: " + schemFile.getName());
                 return false;
             }
 
             debugLog("Using format: " + format.getName());
 
             Clipboard clipboard;
-            try (ClipboardReader reader = format.getReader(new FileInputStream(fileToUse))) {
+            try (ClipboardReader reader = format.getReader(new FileInputStream(schemFile))) {
                 clipboard = reader.read();
                 debugLog("Successfully read clipboard from file");
             }
@@ -500,10 +475,8 @@ public class ArenaManager {
 
         // Check if original arena has a schematic
         File schemFile = new File(schematicsDir, originalArena.getName() + ".schem");
-        File schematicFile = new File(schematicsDir, originalArena.getName() + ".schematic");
         
-        boolean hasValidSchematic = (schemFile.exists() && schemFile.length() > 0) || 
-                                   (schematicFile.exists() && schematicFile.length() > 0);
+        boolean hasValidSchematic = schemFile.exists() && schemFile.length() > 0;
 
         if (!hasValidSchematic) {
             debugLog("No valid schematic found for original arena, creating one...");
