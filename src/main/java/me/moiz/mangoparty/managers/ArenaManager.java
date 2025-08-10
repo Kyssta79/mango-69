@@ -329,8 +329,8 @@ public class ArenaManager {
                 try (FileOutputStream fos = new FileOutputStream(schemFile)) {
                     ClipboardFormat format = ClipboardFormats.findByAlias("sponge");
                     if (format == null) {
-                        // Fallback to finding by extension
-                        format = ClipboardFormats.findByExtension("schem");
+                        // Try to find by file extension
+                        format = ClipboardFormats.findByFile(schemFile);
                     }
                 
                     if (format != null) {

@@ -84,11 +84,15 @@ public class KitEditorGui implements Listener {
     private void openKitEditor(Player player, Kit kit) {
         Inventory inventory = Bukkit.createInventory(null, 27, "Kit Editor: " + kit.getName());
         
-        // Kit rules (slot 10)
-        ItemStack rulesItem = createKitRulesItem(kit);
-        inventory.setItem(10, rulesItem);
+        // Kit icon (slot 10)
+        ItemStack iconItem = createKitIconItem(kit);
+        inventory.setItem(10, iconItem);
         
-        // Save kit (slot 13)
+        // Kit rules (slot 12)
+        ItemStack rulesItem = createKitRulesItem(kit);
+        inventory.setItem(12, rulesItem);
+        
+        // Save kit (slot 14)
         ItemStack saveItem = new ItemStack(Material.EMERALD);
         ItemMeta saveMeta = saveItem.getItemMeta();
         saveMeta.setDisplayName("§aSave Kit");
@@ -96,7 +100,7 @@ public class KitEditorGui implements Listener {
         saveLore.add("§7Click to save changes");
         saveMeta.setLore(saveLore);
         saveItem.setItemMeta(saveMeta);
-        inventory.setItem(13, saveItem);
+        inventory.setItem(14, saveItem);
         
         // Back button (slot 16)
         ItemStack backItem = new ItemStack(Material.ARROW);
@@ -109,6 +113,22 @@ public class KitEditorGui implements Listener {
         inventory.setItem(16, backItem);
         
         player.openInventory(inventory);
+    }
+
+    private ItemStack createKitIconItem(Kit kit) {
+        ItemStack icon = kit.getIcon() != null ? kit.getIcon().clone() : new ItemStack(Material.IRON_SWORD);
+        ItemMeta meta = icon.getItemMeta();
+        meta.setDisplayName("§6Kit Icon");
+        
+        List<String> lore = new ArrayList<>();
+        lore.add("§7Current icon: §f" + icon.getType().name());
+        lore.add("");
+        lore.add("§7Hold an item and click to set");
+        lore.add("§7as the kit icon");
+        
+        meta.setLore(lore);
+        icon.setItemMeta(meta);
+        return icon;
     }
 
     private ItemStack createKitRulesItem(Kit kit) {
@@ -200,7 +220,18 @@ public class KitEditorGui implements Listener {
             return;
         }
         
-        if (displayName.contains("Kit Rules")) {
+        if (displayName.contains("Kit Icon")) {
+            // Set kit icon
+            ItemStack heldItem = player.getInventory().getItemInMainHand();
+            if (heldItem != null && heldItem.getType() != Material.AIR) {
+                kit.setIcon(heldItem.clone());
+                plugin.getKitManager().saveKit(kit);
+                player.sendMessage("§aKit icon updated!");
+                openKitEditor(player, kit);
+            } else {
+                player.sendMessage("§cHold an item to set as icon!");
+            }
+        } else if (displayName.contains("Kit Rules")) {
             // Open rules editor
             openKitRulesEditor(player, kit);
         } else if (displayName.contains("Save Kit")) {
